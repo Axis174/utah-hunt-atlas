@@ -1,8 +1,14 @@
 /* Offline-first service worker.
-   Shell is cache-first (it changes rarely). Data is network-first with a cache
-   fallback, so a fresh refresh wins when there's signal and the last good copy
-   is there when you're in a canyon with none. */
-const VERSION = 'hunt-atlas-v2';
+
+   Shell assets use stale-while-revalidate: the cached copy is served
+   immediately (fast, and works with no signal) while a fresh copy is fetched
+   in the background for next time. A plain cache-first shell would pin an
+   installed phone to whatever CSS it first downloaded, so a fix would never
+   arrive - that is a real failure mode, not a theoretical one.
+
+   Data is network-first with a cache fallback: a live refresh wins when there
+   is signal, and the last good copy is there when there is none. */
+const VERSION = 'hunt-atlas-v3';
 const SHELL = [
   './', './index.html', './app.js', './styles.css',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
@@ -12,7 +18,7 @@ const SHELL = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(VERSION)
-      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(new Request(u, {cache: 'reload'})))))
       .then(() => self.skipWaiting())
   );
 });
@@ -25,28 +31,42 @@ self.addEventListener('activate', e => {
   );
 });
 
+self.addEventListener('message', e => {
+  if (e.data === 'skip-waiting') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
+  // Data: network first, fall back to the last good copy.
   if (url.pathname.includes('/data/')) {
     e.respondWith(
       fetch(req).then(r => {
-        const copy = r.clone();
-        caches.open(VERSION).then(c => c.put(req, copy));
+        if (r && r.ok) {
+          const copy = r.clone();
+          caches.open(VERSION).then(c => c.put(req, copy));
+        }
         return r;
       }).catch(() => caches.match(req).then(r => r || new Response(
         JSON.stringify({offline: true}), {headers: {'Content-Type': 'application/json'}})))
     );
     return;
   }
+
+  // Shell: stale-while-revalidate.
   e.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(r => {
-      const copy = r.clone();
-      caches.open(VERSION).then(c => c.put(req, copy));
-      return r;
-    }).catch(() => caches.match('./index.html')))
+    caches.match(req).then(hit => {
+      const net = fetch(req).then(r => {
+        if (r && r.ok) {
+          const copy = r.clone();
+          caches.open(VERSION).then(c => c.put(req, copy));
+        }
+        return r;
+      }).catch(() => hit || caches.match('./index.html'));
+      return hit || net;
+    })
   );
 });

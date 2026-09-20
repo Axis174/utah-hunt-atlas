@@ -371,6 +371,29 @@ window.addEventListener('online', net);
 window.addEventListener('offline', net);
 
 load().then(ok => { if (ok) { render(); net(); } });
+/* Register the worker, and when a new one takes over, reload once so the
+   running page picks up the new shell instead of showing the old one until
+   the app is force-quit. */
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    location.reload();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      if (reg.waiting) reg.waiting.postMessage('skip-waiting');
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener('statechange', () => {
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            sw.postMessage('skip-waiting');
+          }
+        });
+      });
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
+  });
 }
