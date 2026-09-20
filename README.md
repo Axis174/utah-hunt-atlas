@@ -10,6 +10,15 @@ Not affiliated with UDWR. Always confirm against the current guidebook and the
 
 ---
 
+## Moving this to another GitHub account
+
+`./move-to-personal.sh <username>` creates the repo under that account, pushes,
+enables Pages, waits for the deploy and verifies the live URLs. Sign in first
+with `gh auth login`, then `gh auth switch --user <username>`.
+
+**The app and calendar URLs change with the account name**, so re-add the home
+screen icon and re-subscribe to the calendar afterwards.
+
 ## Setup, once
 
 **1. Turn on GitHub Pages.** Repo *Settings → Pages → Build and deployment →
