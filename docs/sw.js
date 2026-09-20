@@ -2,7 +2,7 @@
    Shell is cache-first (it changes rarely). Data is network-first with a cache
    fallback, so a fresh refresh wins when there's signal and the last good copy
    is there when you're in a canyon with none. */
-const VERSION = 'hunt-atlas-v1';
+const VERSION = 'hunt-atlas-v2';
 const SHELL = [
   './', './index.html', './app.js', './styles.css',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
