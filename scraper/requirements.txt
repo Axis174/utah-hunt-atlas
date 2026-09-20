@@ -1,0 +1,3 @@
+# Intentionally empty. refresh.py and build_calendar.py use only the Python
+# standard library, so the Actions run needs no dependency install and cannot
+# break on a transitive upgrade.

@@ -1,0 +1,1072 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//utah-hunt-atlas//Pete Busch//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Utah Hunt Atlas
+X-WR-CALDESC:Seasons, permit deadlines and access contacts for Utah hunting
+X-PUBLISHED-TTL:PT12H
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+BEGIN:VEVENT
+UID:season-ptarmigan@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260901
+DTEND;VALUE=DATE:20261101
+SUMMARY:BIRD: White-tailed ptarmigan
+DESCRIPTION:Limit: 4/day\, 12 possession\nArea: Statewide (birds only in 
+ the High Uintas)\nNeeds: Free ptarmigan permit required\nNote: Free perm
+ it available since July 30\, 2026.\nSource: UDWR 2026-27 Waterfowl\, Upl
+ and Game and Turkey Guidebook\; UDWR 2026 Big Game Field Regulations Gui
+ debook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:White-tailed ptarmigan opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-dusky-ruffed@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260901
+DTEND;VALUE=DATE:20270101
+SUMMARY:BIRD: Dusky and ruffed grouse
+DESCRIPTION:Limit: See guidebook\nArea: Statewide\nNeeds: Hunting license
+ \nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UD
+ WR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game Applic
+ ation Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dusky and ruffed grouse opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-chukar-youth@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260919
+DTEND;VALUE=DATE:20260922
+SUMMARY:BIRD: Chukar / gray partridge - YOUTH
+DESCRIPTION:Limit: 5/day\, 15 possession\nArea: Statewide\nNeeds: Hunting
+  license\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guideb
+ ook\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Gam
+ e Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Chukar / gray partridge - YOUTH opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-chukar@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260926
+DTEND;VALUE=DATE:20270216
+SUMMARY:BIRD: Chukar and gray partridge
+DESCRIPTION:Limit: 5/day\, 15 possession\nArea: Statewide\nNeeds: Hunting
+  license\nNote: DWR no longer releases pen-reared chukar on public land.
+  Antelope Island closed to all upland game.\nSource: UDWR 2026-27 Waterf
+ owl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Field Regula
+ tions Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Chukar and gray partridge opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-duck-n@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20270117
+SUMMARY:BIRD: Duck\, merganser\, coot\, snipe - Northern Zone
+DESCRIPTION:Limit: 7 ducks (2 canvasback\, 2 hen mallard\, 3 pintail\, 2 
+ redhead\, 2 wood duck\, 2 scaup)\; 25 coots\nArea: Northern Zone\nNeeds:
+  License + HIP + federal duck stamp (16+)\nSource: UDWR 2026-27 Waterfow
+ l\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Field Regulati
+ ons Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Duck\, merganser\, coot\, snipe - Northern Zone opens in 3 da
+ ys
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-scaup-n@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20261228
+SUMMARY:BIRD: Scaup - Northern Zone
+DESCRIPTION:Limit: 2/day\nArea: Northern Zone\nNeeds: License + HIP + duc
+ k stamp\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebo
+ ok\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game
+  Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Scaup - Northern Zone opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-swan@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20261214
+SUMMARY:BIRD: Tundra swan
+DESCRIPTION:Limit: 1 bird\, drawn permit\nArea: Northern Zone\nNeeds: Dra
+ wn permit + HIP + duck stamp + annual swan orientation course\nSource: U
+ DWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big
+  Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Guide
+ book
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Tundra swan opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-geese-wf@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20261011
+SUMMARY:BIRD: Dark and white-fronted geese - Wasatch Front area (part 1)
+DESCRIPTION:Limit: 5 dark geese\; 6 white-fronted (reduced from 10)\nArea
+ : Wasatch Front goose area\nNeeds: License + HIP + duck stamp\nSource: U
+ DWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big
+  Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Guide
+ book
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dark and white-fronted geese - Wasatch Front area (part 1) op
+ ens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-geese-wf2@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261110
+DTEND;VALUE=DATE:20270216
+SUMMARY:BIRD: Dark and white-fronted geese - Wasatch Front area (part 2)
+DESCRIPTION:Limit: 5 dark geese\; 6 white-fronted\nArea: Wasatch Front go
+ ose area\nNeeds: License + HIP + duck stamp\nNote: Split season - note t
+ he month-long gap after Oct 10.\nSource: UDWR 2026-27 Waterfowl\, Upland
+  Game and Turkey Guidebook\; UDWR 2026 Big Game Field Regulations Guideb
+ ook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dark and white-fronted geese - Wasatch Front area (part 2) op
+ ens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-pheasant-youth@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261031
+DTEND;VALUE=DATE:20261106
+SUMMARY:BIRD: Ring-necked pheasant - YOUTH
+DESCRIPTION:Limit: 2 males/day\nArea: Statewide\nNeeds: Hunting license\n
+ Source: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR
+  2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game Applicat
+ ion Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ring-necked pheasant - YOUTH opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-pheasant@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261107
+DTEND;VALUE=DATE:20261207
+SUMMARY:BIRD: Ring-necked pheasant
+DESCRIPTION:Limit: 2 male birds/day\, 6 possession\nArea: Statewide\nNeed
+ s: Hunting license\nNote: Males only. Goshen Warm Springs WMA closed to 
+ all hunting.\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Gu
+ idebook\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big
+  Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ring-necked pheasant opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-quail@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261107
+DTEND;VALUE=DATE:20270101
+SUMMARY:BIRD: California and Gambel's quail
+DESCRIPTION:Limit: 5/day\, 15 possession\nArea: Statewide\nNeeds: Hunting
+  license\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guideb
+ ook\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Gam
+ e Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:California and Gambel's quail opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-deer-archery@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260815
+DTEND;VALUE=DATE:20260912
+SUMMARY:DEER: Buck deer - general archery
+DESCRIPTION:Area: General-season units\nNeeds: General archery buck deer 
+ permit\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guideboo
+ k\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game 
+ Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Buck deer - general archery opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-deer-muzz@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260923
+DTEND;VALUE=DATE:20261002
+SUMMARY:DEER: Buck deer - general muzzleloader
+DESCRIPTION:Area: General-season units\nNeeds: General muzzleloader buck 
+ deer permit\nNote: Restricted muzzleloader runs the same dates.\nSource:
+  UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 B
+ ig Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Gui
+ debook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Buck deer - general muzzleloader opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-deer-early-rifle@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261007
+DTEND;VALUE=DATE:20261012
+SUMMARY:DEER: Buck deer - early any legal weapon (rifle)
+DESCRIPTION:Area: General-season units\nNeeds: General any-legal-weapon p
+ ermit\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook
+ \; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game A
+ pplication Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Buck deer - early any legal weapon (rifle) opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-deer-rifle@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261017
+DTEND;VALUE=DATE:20261026
+SUMMARY:DEER: Buck deer - any legal weapon (rifle)
+DESCRIPTION:Area: General-season units\nNeeds: General any-legal-weapon p
+ ermit\nNote: Restricted rifle runs the same dates.\nSource: UDWR 2026-27
+  Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Field
+  Regulations Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Buck deer - any legal weapon (rifle) opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-deer-ext-archery@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260815
+DTEND;VALUE=DATE:20261216
+SUMMARY:DEER: Buck deer - extended archery (Wasatch Front)
+DESCRIPTION:Area: Wasatch Front Extended Archery Area\nNeeds: Archery per
+ mit + extended archery course\nNote: West Cache extended archery runs to
+  Jan 31. Course required.\nSource: UDWR 2026-27 Waterfowl\, Upland Game 
+ and Turkey Guidebook\; UDWR 2026 Big Game Field Regulations Guidebook\; 
+ UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Buck deer - extended archery (Wasatch Front) opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-archery-anybull@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260815
+DTEND;VALUE=DATE:20260917
+SUMMARY:ELK: Bull elk - archery\, any bull units
+DESCRIPTION:Area: Any bull units\nNeeds: General archery elk permit\nNote
+ : No general archery elk on the Paunsaugunt unit.\nSource: UDWR 2026-27 
+ Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Field 
+ Regulations Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - archery\, any bull units opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-archery-spike@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260815
+DTEND;VALUE=DATE:20260905
+SUMMARY:ELK: Bull elk - archery\, spike units
+DESCRIPTION:Area: Spike units\nNeeds: General archery elk permit\nSource:
+  UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 B
+ ig Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Gui
+ debook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - archery\, spike units opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-youth-draw@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260912
+DTEND;VALUE=DATE:20260923
+SUMMARY:ELK: Elk - draw-only youth any bull / hunter's choice
+DESCRIPTION:Area: Any bull\nNeeds: Drawn youth permit\nSource: UDWR 2026-
+ 27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Fie
+ ld Regulations Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Elk - draw-only youth any bull / hunter's choice opens in 3 d
+ ays
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-early-rifle@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20261010
+SUMMARY:ELK: Bull elk - early any legal weapon\, any bull units
+DESCRIPTION:Area: Any bull units\nNeeds: General any-bull permit\nSource:
+  UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 B
+ ig Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Gui
+ debook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - early any legal weapon\, any bull units opens in 3
+  days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-spike-rifle@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261003
+DTEND;VALUE=DATE:20261016
+SUMMARY:ELK: Bull elk - any legal weapon\, spike units
+DESCRIPTION:Area: Spike units\nNeeds: General spike permit\nSource: UDWR 
+ 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Gam
+ e Field Regulations Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - any legal weapon\, spike units opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-late-rifle@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261010
+DTEND;VALUE=DATE:20261017
+SUMMARY:ELK: Bull elk - late any legal weapon\, any bull units
+DESCRIPTION:Area: Any bull units\nNeeds: General any-bull permit\nSource:
+  UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 B
+ ig Game Field Regulations Guidebook\; UDWR 2026 Big Game Application Gui
+ debook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - late any legal weapon\, any bull units opens in 3 
+ days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-elk-muzz@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261028
+DTEND;VALUE=DATE:20261106
+SUMMARY:ELK: Bull elk - muzzleloader (any bull and spike)
+DESCRIPTION:Area: Any bull and spike units\nNeeds: General muzzleloader e
+ lk permit\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guide
+ book\; UDWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Ga
+ me Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bull elk - muzzleloader (any bull and spike) opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-turkey-fall@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261001
+DTEND;VALUE=DATE:20270301
+SUMMARY:TURKEY: Wild turkey - fall management harvest
+DESCRIPTION:Area: Select areas\, largely private\nNeeds: Fall turkey perm
+ it\nNote: Harvest reporting now MANDATORY within 30 days of season end\,
+  or a $25 late fee blocks your next application.\nSource: UDWR 2026-27 W
+ aterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Game Field R
+ egulations Guidebook\; UDWR 2026 Big Game Application Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Wild turkey - fall management harvest opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-turkey-le@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270410
+DTEND;VALUE=DATE:20270430
+SUMMARY:TURKEY: Wild turkey - limited entry spring
+DESCRIPTION:Area: By drawn unit\nNeeds: Drawn turkey permit\nSource: UDWR
+  2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026 Big Ga
+ me Field Regulations Guidebook\; UDWR 2026 Big Game Application Guideboo
+ k
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Wild turkey - limited entry spring opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-turkey-general@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270503
+DTEND;VALUE=DATE:20270601
+SUMMARY:TURKEY: Wild turkey - spring general season
+DESCRIPTION:Area: Statewide\nNeeds: Over-the-counter turkey permit\nSourc
+ e: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; UDWR 2026
+  Big Game Field Regulations Guidebook\; UDWR 2026 Big Game Application G
+ uidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Wild turkey - spring general season opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:season-cha@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260831
+DTEND;VALUE=DATE:20270401
+SUMMARY:BIRD: Commercial hunting areas (released birds)
+DESCRIPTION:Area: Registered CHAs\nNeeds: Hunter ed or trial-hunting auth
+ orization. No hunting license needed.\nNote: Open dates vary by operator
+ .\nSource: UDWR 2026-27 Waterfowl\, Upland Game and Turkey Guidebook\; U
+ DWR 2026 Big Game Field Regulations Guidebook\; UDWR 2026 Big Game Appli
+ cation Guidebook
+CATEGORIES:SEASON
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Commercial hunting areas (released birds) opens in 3 days
+TRIGGER:-P3D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-ptarmigan-permit@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261031
+DTEND;VALUE=DATE:20261101
+SUMMARY:[LAST DAY] Ptarmigan season closes
+DESCRIPTION:Last day. Mirror Lake Highway also closes for winter in Novem
+ ber\, so access shuts at roughly the same time.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ptarmigan season closes - 30 days out
+TRIGGER:-P30D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ptarmigan season closes - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ptarmigan season closes - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ptarmigan season closes
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-wma-permit@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261001
+DTEND;VALUE=DATE:20261002
+SUMMARY:[PERMIT] Confirm WMA digital access permit
+DESCRIPTION:New for 2026. Anyone 18+ needs the free WMA digital access pe
+ rmit OR a valid hunting/fishing/combo license to enter a WMA in Davis\, 
+ Salt Lake\, Utah or Weber County. Free at wildlife.utah.gov/wmas after r
+ eviewing the educational materials. Valid 365 days.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Confirm WMA digital access permit - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Confirm WMA digital access permit - 3 days out
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Confirm WMA digital access permit
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-wia-auth@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261001
+DTEND;VALUE=DATE:20261002
+SUMMARY:[PERMIT] Get annual Walk-In Access authorization number
+DESCRIPTION:Free\, separate from your hunting license\, required for ever
+ y WIA visit. wildlife.utah.gov/walkinaccess/authorization
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Get annual Walk-In Access authorization number - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Get annual Walk-In Access authorization number - 3 days out
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Get annual Walk-In Access authorization number
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-hip-stamp@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261002
+DTEND;VALUE=DATE:20261003
+SUMMARY:[PERMIT] HIP number + federal duck stamp before the duck opener
+DESCRIPTION:Duck opens Oct 3 in the Northern Zone. HIP registration is re
+ quired for all waterfowl hunters\; federal duck stamp required at 16+.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:HIP number + federal duck stamp before the duck opener - 14 d
+ ays out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:HIP number + federal duck stamp before the duck opener - 7 da
+ ys out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:HIP number + federal duck stamp before the duck opener - 2 da
+ ys out
+TRIGGER:-P2D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:HIP number + federal duck stamp before the duck opener
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-landowner-calls@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261015
+DTEND;VALUE=DATE:20261016
+SUMMARY:[TO DO] Call the Box Elder WIA landowners
+DESCRIPTION:Four of the seven Box Elder hunting WIA properties require co
+ ntacting the landowner before access\, and RSorensen explicitly will not
+  accept a voicemail. Make these calls well before the Nov 7 pheasant ope
+ ner.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call the Box Elder WIA landowners - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call the Box Elder WIA landowners - 1 day out
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call the Box Elder WIA landowners
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-ogden-bay-closure@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261114
+DTEND;VALUE=DATE:20261115
+SUMMARY:[CLOSES] Ogden Bay WMA - portion closed today
+DESCRIPTION:A portion of Ogden Bay WMA is closed for a sponsored youth/be
+ ginner pheasant hunt. Hunt Harold Crane or the Box Elder block instead.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ogden Bay WMA - portion closed today - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ogden Bay WMA - portion closed today - 1 day out
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Ogden Bay WMA - portion closed today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-wallsburg-close@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261130
+DTEND;VALUE=DATE:20261201
+SUMMARY:[CLOSES] Last day at Wallsburg WMA
+DESCRIPTION:Wallsburg WMA closes Dec 1 through Apr 30. It is the closest 
+ stocked pheasant and the best chukar ground to the Heber house\, so use 
+ the November window.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Last day at Wallsburg WMA - 21 days out
+TRIGGER:-P21D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Last day at Wallsburg WMA - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Last day at Wallsburg WMA - 2 days out
+TRIGGER:-P2D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Last day at Wallsburg WMA
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-wma-dec-close@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261130
+DTEND;VALUE=DATE:20261201
+SUMMARY:[CLOSES] Dec 1 WMA closures take effect
+DESCRIPTION:Timpanogos\, Loafer Mountain\, Dairy Fork\, Lake Fork\, Birds
+ eye\, Starvation and Hobble Creek WMAs all close Dec 1 through Apr 30.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dec 1 WMA closures take effect - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dec 1 WMA closures take effect - 3 days out
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Dec 1 WMA closures take effect
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-brigham-face-close@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261231
+DTEND;VALUE=DATE:20270101
+SUMMARY:[CLOSES] Brigham Face and Coldwater Canyon WMAs close Jan 1
+DESCRIPTION:Closed Jan 1 until the second Saturday in April. Middle Fork 
+ WMA closes on the same schedule.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Brigham Face and Coldwater Canyon WMAs close Jan 1 - 14 days 
+ out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Brigham Face and Coldwater Canyon WMAs close Jan 1 - 3 days o
+ ut
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Brigham Face and Coldwater Canyon WMAs close Jan 1
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-biggame-app-2027@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270319
+DTEND;VALUE=DATE:20270320
+SUMMARY:[APPLY] Utah big game application window opens (projected)
+DESCRIPTION:PROJECTED DATE - not yet confirmed by UDWR. The refresh job w
+ atches for the official announcement and will correct this.\n\nPROJECTED
+  from the 2026 cycle\, which ran March 19 - April 23 with results by May
+  31. UDWR has not published the 2027 dates\; the scraper watches for the
+ m and will correct this entry.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application window opens (projected) - 30 days 
+ out
+TRIGGER:-P30D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application window opens (projected) - 7 days o
+ ut
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application window opens (projected) - 1 day ou
+ t
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application window opens (projected)
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-biggame-app-close-2027@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270423
+DTEND;VALUE=DATE:20270424
+SUMMARY:[APPLY] Utah big game application CLOSES (projected)
+DESCRIPTION:PROJECTED DATE - not yet confirmed by UDWR. The refresh job w
+ atches for the official announcement and will correct this.\n\nPROJECTED
+  from the 2026 cycle (closed April 23 at 11 p.m. MDT). This is the singl
+ e most consequential deadline of the year - missing it costs you the who
+ le draw and a point. Apply at utahdraws.com.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 45 days out
+TRIGGER:-P45D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 30 days out
+TRIGGER:-P30D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 3 days out
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected) - 1 day out
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Utah big game application CLOSES (projected)
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-antlerless-2027@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270623
+DTEND;VALUE=DATE:20270624
+SUMMARY:[APPLY] Antlerless application window closes (projected)
+DESCRIPTION:PROJECTED DATE - not yet confirmed by UDWR. The refresh job w
+ atches for the official announcement and will correct this.\n\nPROJECTED
+  from the 2026 cycle (June 9-23). Also the second chance to apply for bi
+ g game bonus/preference points if you missed the spring window.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Antlerless application window closes (projected) - 30 days ou
+ t
+TRIGGER:-P30D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Antlerless application window closes (projected) - 7 days out
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Antlerless application window closes (projected) - 1 day out
+TRIGGER:-P1D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Antlerless application window closes (projected)
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:deadline-turkey-report@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20270330
+DTEND;VALUE=DATE:20270331
+SUMMARY:[REPORT] Fall turkey harvest report due
+DESCRIPTION:NEW for 2026: mandatory harvest reporting within 30 days of s
+ eason end\, even if you harvested nothing. Miss it and you cannot apply 
+ in the next limited-entry turkey draw without paying a $25 late fee.
+CATEGORIES:DEADLINE
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Fall turkey harvest report due - 14 days out
+TRIGGER:-P14D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Fall turkey harvest report due - 3 days out
+TRIGGER:-P3D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Fall turkey harvest report due
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:wia-call-0@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261012
+DTEND;VALUE=DATE:20261013
+SUMMARY:[CALL] RSorensen WIA landowner
+DESCRIPTION:RSorensen - Box Elder County\, 480 acres.\nMust speak DIRECTL
+ Y with the landowner to set a date. Explicitly will NOT accept a voicema
+ il.\nVia DWR Ogden office if denied: 801-476-2740\nCoordinates: 41.7594\
+ , -112.40423\n\nCall before the Nov 7 pheasant opener - these take a wee
+ k of phone tag in season.
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call RSorensen landowner next week
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call RSorensen landowner today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:wia-call-1@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261013
+DTEND;VALUE=DATE:20261014
+SUMMARY:[CALL] Sorensen Sons WIA landowner
+DESCRIPTION:Sorensen Sons - Box Elder County\, 80 acres.\nContact landown
+ er by phone before going. May cap the number of hunters on the property 
+ at once.\nVia DWR Ogden office if denied: 801-476-2740\nCoordinates: 41.
+ 75639\, -112.40383\n\nCall before the Nov 7 pheasant opener - these take
+  a week of phone tag in season.
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call Sorensen Sons landowner next week
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call Sorensen Sons landowner today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:wia-call-2@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261014
+DTEND;VALUE=DATE:20261015
+SUMMARY:[CALL] TMunns Blue Creek WIA landowner
+DESCRIPTION:TMunns Blue Creek - Box Elder County\, 530 acres.\nMust conta
+ ct the landowner before accessing. Open Sept 1 - Feb 29.\nReport denials
+  to DWR immediately\nCoordinates: 41.88103\, -112.48942\n\nCall before t
+ he Nov 7 pheasant opener - these take a week of phone tag in season.
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call TMunns Blue Creek landowner next week
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call TMunns Blue Creek landowner today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:wia-call-3@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20261015
+DTEND;VALUE=DATE:20261016
+SUMMARY:[CALL] TMunns Hansel Valley WIA landowner
+DESCRIPTION:TMunns Hansel Valley - Box Elder County\, 2656 acres.\nMust c
+ ontact the landowner prior to accessing. Open Sept 1 - Feb 29.\nReport d
+ enials to DWR immediately\nCoordinates: 41.82445\, -112.595\n\nCall befo
+ re the Nov 7 pheasant opener - these take a week of phone tag in season.
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call TMunns Hansel Valley landowner next week
+TRIGGER:-P7D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call TMunns Hansel Valley landowner today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:dwr-call-0@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[CALL] DWR Salt Lake office - 801-538-4700
+DESCRIPTION:Blackhawk WMA 2026-27 status is unconfirmed - UDWR's own data
+  layer still carries stale 2025-26 closure text.\n\nPhone: 801-538-4700
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call DWR Salt Lake office
+TRIGGER:-P2D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call DWR Salt Lake office today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:dwr-call-1@utah-hunt-atlas
+DTSTAMP:20260920T131136Z
+DTSTART;VALUE=DATE:20260929
+DTEND;VALUE=DATE:20260930
+SUMMARY:[CALL] DWR Central Region (Springville) - 801-491-5678
+DESCRIPTION:Confirm whether retriever dogs are barred at Deer Creek (culi
+ nary water). Forum-sourced claim only. Also Wasatch Mtns unit boundary q
+ uestions.\n\nPhone: 801-491-5678
+CATEGORIES:TASK
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call DWR Central Region (Springville)
+TRIGGER:-P2D
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Call DWR Central Region (Springville) today
+TRIGGER:-PT9H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

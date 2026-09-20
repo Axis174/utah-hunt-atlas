@@ -1,0 +1,17 @@
+{
+  "name": "Utah Hunt Atlas",
+  "short_name": "Hunt Atlas",
+  "description": "Access, seasons, permits and migration data for Utah hunting.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#171C17",
+  "theme_color": "#1B6A5C",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icons/icon-256.png","sizes":"256x256","type":"image/png"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"},
+    {"src":"icons/maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

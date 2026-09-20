@@ -1,0 +1,54 @@
+{
+  "_source": "UDWR 2026-27 Waterfowl, Upland Game and Turkey Guidebook; UDWR 2026 Big Game Field Regulations Guidebook; UDWR 2026 Big Game Application Guidebook",
+  "_retrieved": "2026-09-20",
+  "_note": "Dates are as published for the 2026 seasons. The 2027 big game application window is not yet published; the scraper watches for it.",
+  "seasons": [
+    {"id":"ptarmigan","group":"bird","name":"White-tailed ptarmigan","start":"2026-09-01","end":"2026-10-31","bag":"4/day, 12 possession","area":"Statewide (birds only in the High Uintas)","permit":"Free ptarmigan permit required","note":"Free permit available since July 30, 2026."},
+    {"id":"dusky-ruffed","group":"bird","name":"Dusky and ruffed grouse","start":"2026-09-01","end":"2026-12-31","bag":"See guidebook","area":"Statewide","permit":"Hunting license"},
+    {"id":"chukar-youth","group":"bird","name":"Chukar / gray partridge - YOUTH","start":"2026-09-19","end":"2026-09-21","bag":"5/day, 15 possession","area":"Statewide","permit":"Hunting license"},
+    {"id":"chukar","group":"bird","name":"Chukar and gray partridge","start":"2026-09-26","end":"2027-02-15","bag":"5/day, 15 possession","area":"Statewide","permit":"Hunting license","note":"DWR no longer releases pen-reared chukar on public land. Antelope Island closed to all upland game."},
+    {"id":"duck-n","group":"bird","name":"Duck, merganser, coot, snipe - Northern Zone","start":"2026-10-03","end":"2027-01-16","bag":"7 ducks (2 canvasback, 2 hen mallard, 3 pintail, 2 redhead, 2 wood duck, 2 scaup); 25 coots","area":"Northern Zone","permit":"License + HIP + federal duck stamp (16+)"},
+    {"id":"scaup-n","group":"bird","name":"Scaup - Northern Zone","start":"2026-10-03","end":"2026-12-27","bag":"2/day","area":"Northern Zone","permit":"License + HIP + duck stamp"},
+    {"id":"swan","group":"bird","name":"Tundra swan","start":"2026-10-03","end":"2026-12-13","bag":"1 bird, drawn permit","area":"Northern Zone","permit":"Drawn permit + HIP + duck stamp + annual swan orientation course"},
+    {"id":"geese-wf","group":"bird","name":"Dark and white-fronted geese - Wasatch Front area (part 1)","start":"2026-10-03","end":"2026-10-10","bag":"5 dark geese; 6 white-fronted (reduced from 10)","area":"Wasatch Front goose area","permit":"License + HIP + duck stamp"},
+    {"id":"geese-wf2","group":"bird","name":"Dark and white-fronted geese - Wasatch Front area (part 2)","start":"2026-11-10","end":"2027-02-15","bag":"5 dark geese; 6 white-fronted","area":"Wasatch Front goose area","permit":"License + HIP + duck stamp","note":"Split season - note the month-long gap after Oct 10."},
+    {"id":"pheasant-youth","group":"bird","name":"Ring-necked pheasant - YOUTH","start":"2026-10-31","end":"2026-11-05","bag":"2 males/day","area":"Statewide","permit":"Hunting license"},
+    {"id":"pheasant","group":"bird","name":"Ring-necked pheasant","start":"2026-11-07","end":"2026-12-06","bag":"2 male birds/day, 6 possession","area":"Statewide","permit":"Hunting license","note":"Males only. Goshen Warm Springs WMA closed to all hunting."},
+    {"id":"quail","group":"bird","name":"California and Gambel's quail","start":"2026-11-07","end":"2026-12-31","bag":"5/day, 15 possession","area":"Statewide","permit":"Hunting license"},
+
+    {"id":"deer-archery","group":"deer","name":"Buck deer - general archery","start":"2026-08-15","end":"2026-09-11","area":"General-season units","permit":"General archery buck deer permit"},
+    {"id":"deer-muzz","group":"deer","name":"Buck deer - general muzzleloader","start":"2026-09-23","end":"2026-10-01","area":"General-season units","permit":"General muzzleloader buck deer permit","note":"Restricted muzzleloader runs the same dates."},
+    {"id":"deer-early-rifle","group":"deer","name":"Buck deer - early any legal weapon (rifle)","start":"2026-10-07","end":"2026-10-11","area":"General-season units","permit":"General any-legal-weapon permit"},
+    {"id":"deer-rifle","group":"deer","name":"Buck deer - any legal weapon (rifle)","start":"2026-10-17","end":"2026-10-25","area":"General-season units","permit":"General any-legal-weapon permit","note":"Restricted rifle runs the same dates."},
+    {"id":"deer-ext-archery","group":"deer","name":"Buck deer - extended archery (Wasatch Front)","start":"2026-08-15","end":"2026-12-15","area":"Wasatch Front Extended Archery Area","permit":"Archery permit + extended archery course","note":"West Cache extended archery runs to Jan 31. Course required."},
+
+    {"id":"elk-archery-anybull","group":"elk","name":"Bull elk - archery, any bull units","start":"2026-08-15","end":"2026-09-16","area":"Any bull units","permit":"General archery elk permit","note":"No general archery elk on the Paunsaugunt unit."},
+    {"id":"elk-archery-spike","group":"elk","name":"Bull elk - archery, spike units","start":"2026-08-15","end":"2026-09-04","area":"Spike units","permit":"General archery elk permit"},
+    {"id":"elk-youth-draw","group":"elk","name":"Elk - draw-only youth any bull / hunter's choice","start":"2026-09-12","end":"2026-09-22","area":"Any bull","permit":"Drawn youth permit"},
+    {"id":"elk-early-rifle","group":"elk","name":"Bull elk - early any legal weapon, any bull units","start":"2026-10-03","end":"2026-10-09","area":"Any bull units","permit":"General any-bull permit"},
+    {"id":"elk-spike-rifle","group":"elk","name":"Bull elk - any legal weapon, spike units","start":"2026-10-03","end":"2026-10-15","area":"Spike units","permit":"General spike permit"},
+    {"id":"elk-late-rifle","group":"elk","name":"Bull elk - late any legal weapon, any bull units","start":"2026-10-10","end":"2026-10-16","area":"Any bull units","permit":"General any-bull permit"},
+    {"id":"elk-muzz","group":"elk","name":"Bull elk - muzzleloader (any bull and spike)","start":"2026-10-28","end":"2026-11-05","area":"Any bull and spike units","permit":"General muzzleloader elk permit"},
+
+    {"id":"turkey-fall","group":"turkey","name":"Wild turkey - fall management harvest","start":"2026-10-01","end":"2027-02-28","area":"Select areas, largely private","permit":"Fall turkey permit","note":"Harvest reporting now MANDATORY within 30 days of season end, or a $25 late fee blocks your next application."},
+    {"id":"turkey-le","group":"turkey","name":"Wild turkey - limited entry spring","start":"2027-04-10","end":"2027-04-29","area":"By drawn unit","permit":"Drawn turkey permit"},
+    {"id":"turkey-general","group":"turkey","name":"Wild turkey - spring general season","start":"2027-05-03","end":"2027-05-31","area":"Statewide","permit":"Over-the-counter turkey permit"},
+
+    {"id":"cha","group":"bird","name":"Commercial hunting areas (released birds)","start":"2026-08-31","end":"2027-03-31","area":"Registered CHAs","permit":"Hunter ed or trial-hunting authorization. No hunting license needed.","note":"Open dates vary by operator."}
+  ],
+  "deadlines": [
+    {"id":"ptarmigan-permit","date":"2026-10-31","kind":"season-close","title":"Ptarmigan season closes","detail":"Last day. Mirror Lake Highway also closes for winter in November, so access shuts at roughly the same time.","lead_days":[30,14,7]},
+    {"id":"wma-permit","date":"2026-10-01","kind":"permit","title":"Confirm WMA digital access permit","detail":"New for 2026. Anyone 18+ needs the free WMA digital access permit OR a valid hunting/fishing/combo license to enter a WMA in Davis, Salt Lake, Utah or Weber County. Free at wildlife.utah.gov/wmas after reviewing the educational materials. Valid 365 days.","lead_days":[14,3]},
+    {"id":"wia-auth","date":"2026-10-01","kind":"permit","title":"Get annual Walk-In Access authorization number","detail":"Free, separate from your hunting license, required for every WIA visit. wildlife.utah.gov/walkinaccess/authorization","lead_days":[14,3]},
+    {"id":"hip-stamp","date":"2026-10-02","kind":"permit","title":"HIP number + federal duck stamp before the duck opener","detail":"Duck opens Oct 3 in the Northern Zone. HIP registration is required for all waterfowl hunters; federal duck stamp required at 16+.","lead_days":[14,7,2]},
+    {"id":"landowner-calls","date":"2026-10-15","kind":"task","title":"Call the Box Elder WIA landowners","detail":"Four of the seven Box Elder hunting WIA properties require contacting the landowner before access, and RSorensen explicitly will not accept a voicemail. Make these calls well before the Nov 7 pheasant opener.","lead_days":[7,1]},
+    {"id":"ogden-bay-closure","date":"2026-11-14","kind":"closure","title":"Ogden Bay WMA - portion closed today","detail":"A portion of Ogden Bay WMA is closed for a sponsored youth/beginner pheasant hunt. Hunt Harold Crane or the Box Elder block instead.","lead_days":[7,1]},
+    {"id":"wallsburg-close","date":"2026-11-30","kind":"closure","title":"Last day at Wallsburg WMA","detail":"Wallsburg WMA closes Dec 1 through Apr 30. It is the closest stocked pheasant and the best chukar ground to the Heber house, so use the November window.","lead_days":[21,7,2]},
+    {"id":"wma-dec-close","date":"2026-11-30","kind":"closure","title":"Dec 1 WMA closures take effect","detail":"Timpanogos, Loafer Mountain, Dairy Fork, Lake Fork, Birdseye, Starvation and Hobble Creek WMAs all close Dec 1 through Apr 30.","lead_days":[14,3]},
+    {"id":"brigham-face-close","date":"2026-12-31","kind":"closure","title":"Brigham Face and Coldwater Canyon WMAs close Jan 1","detail":"Closed Jan 1 until the second Saturday in April. Middle Fork WMA closes on the same schedule.","lead_days":[14,3]},
+    {"id":"biggame-app-2027","date":"2027-03-19","kind":"application","title":"Utah big game application window opens (projected)","detail":"PROJECTED from the 2026 cycle, which ran March 19 - April 23 with results by May 31. UDWR has not published the 2027 dates; the scraper watches for them and will correct this entry.","lead_days":[30,7,1],"projected":true},
+    {"id":"biggame-app-close-2027","date":"2027-04-23","kind":"application","title":"Utah big game application CLOSES (projected)","detail":"PROJECTED from the 2026 cycle (closed April 23 at 11 p.m. MDT). This is the single most consequential deadline of the year - missing it costs you the whole draw and a point. Apply at utahdraws.com.","lead_days":[45,30,14,7,3,1],"projected":true},
+    {"id":"antlerless-2027","date":"2027-06-23","kind":"application","title":"Antlerless application window closes (projected)","detail":"PROJECTED from the 2026 cycle (June 9-23). Also the second chance to apply for big game bonus/preference points if you missed the spring window.","lead_days":[30,7,1],"projected":true},
+    {"id":"turkey-report","date":"2027-03-30","kind":"reporting","title":"Fall turkey harvest report due","detail":"NEW for 2026: mandatory harvest reporting within 30 days of season end, even if you harvested nothing. Miss it and you cannot apply in the next limited-entry turkey draw without paying a $25 late fee.","lead_days":[14,3]}
+  ]
+}

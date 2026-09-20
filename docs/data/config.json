@@ -1,0 +1,182 @@
+{
+ "homes": [
+  {
+   "id": "nsl",
+   "label": "North Salt Lake",
+   "lat": 40.8477,
+   "lon": -111.9069,
+   "note": "Town-level anchor. Drive times were computed from a street-level point and are baked in as minutes.",
+   "units": [
+    "Box Elder (general deer)",
+    "Wasatch Front Extended Archery Area"
+   ]
+  },
+  {
+   "id": "heber",
+   "label": "Heber City",
+   "lat": 40.50646,
+   "lon": -111.4133,
+   "note": "Town centroid anchor.",
+   "units": [
+    "Wasatch Mtns",
+    "Wasatch Mtns, East",
+    "Wasatch Mtns/Central Mtns"
+   ]
+  },
+  {
+   "id": "torrey",
+   "label": "Torrey",
+   "lat": 38.2999,
+   "lon": -111.4194,
+   "note": "Wayne County town centroid. Boulder Mountain and the Aquarius Plateau lie in the Plateau unit.",
+   "units": [
+    "Thousand Lakes",
+    "Fishlake/Thousand Lakes",
+    "Plateau"
+   ]
+  }
+ ],
+ "contacts": [
+  {
+   "name": "DWR Salt Lake office",
+   "phone": "801-538-4700",
+   "why": "Blackhawk WMA 2026-27 status is unconfirmed - UDWR's own data layer still carries stale 2025-26 closure text.",
+   "priority": "high"
+  },
+  {
+   "name": "DWR Central Region (Springville)",
+   "phone": "801-491-5678",
+   "why": "Confirm whether retriever dogs are barred at Deer Creek (culinary water). Forum-sourced claim only. Also Wasatch Mtns unit boundary questions.",
+   "priority": "high"
+  },
+  {
+   "name": "DWR Ogden office",
+   "phone": "801-476-2740",
+   "why": "Great Salt Lake water levels before any long drive to Bear River Bay or Willard Spur. Also Box Elder general deer boundary questions.",
+   "priority": "medium"
+  },
+  {
+   "name": "DWR Cedar City office",
+   "phone": "435-865-6100",
+   "why": "Boundary questions for Thousand Lakes, Fishlake/Thousand Lakes and Plateau units - the Torrey and Boulder Mountain country.",
+   "priority": "medium"
+  },
+  {
+   "name": "DWR Price office",
+   "phone": "435-613-3700",
+   "why": "Wasatch Mtns/Central Mtns boundary questions.",
+   "priority": "low"
+  },
+  {
+   "name": "Report wildlife crimes (UTiP)",
+   "phone": "800-662-3337",
+   "why": "Poaching or wildlife crime. Text 847411.",
+   "priority": "reference"
+  }
+ ],
+ "wia_landowner_calls": [
+  {
+   "property": "RSorensen",
+   "county": "Box Elder",
+   "acres": 480,
+   "lat": 41.7594,
+   "lon": -112.40423,
+   "requirement": "Must speak DIRECTLY with the landowner to set a date. Explicitly will NOT accept a voicemail.",
+   "contact": "Via DWR Ogden office if denied: 801-476-2740"
+  },
+  {
+   "property": "Sorensen Sons",
+   "county": "Box Elder",
+   "acres": 80,
+   "lat": 41.75639,
+   "lon": -112.40383,
+   "requirement": "Contact landowner by phone before going. May cap the number of hunters on the property at once.",
+   "contact": "Via DWR Ogden office if denied: 801-476-2740"
+  },
+  {
+   "property": "TMunns Blue Creek",
+   "county": "Box Elder",
+   "acres": 530,
+   "lat": 41.88103,
+   "lon": -112.48942,
+   "requirement": "Must contact the landowner before accessing. Open Sept 1 - Feb 29.",
+   "contact": "Report denials to DWR immediately"
+  },
+  {
+   "property": "TMunns Hansel Valley",
+   "county": "Box Elder",
+   "acres": 2656,
+   "lat": 41.82445,
+   "lon": -112.595,
+   "requirement": "Must contact the landowner prior to accessing. Open Sept 1 - Feb 29.",
+   "contact": "Report denials to DWR immediately"
+  }
+ ],
+ "permits": [
+  {
+   "id": "license",
+   "name": "Utah hunting or combination license",
+   "cost": "$40 ($25.50 disabled veteran)",
+   "where": "wildlife.utah.gov",
+   "needed_for": "Everything except a commercial hunting area"
+  },
+  {
+   "id": "wma",
+   "name": "WMA digital access permit",
+   "cost": "Free",
+   "where": "wildlife.utah.gov/wmas",
+   "needed_for": "Any WMA in Davis, Salt Lake, Utah, Weber counties (18+). A valid license also satisfies it.",
+   "new": true
+  },
+  {
+   "id": "wia",
+   "name": "Walk-In Access authorization number",
+   "cost": "Free",
+   "where": "wildlife.utah.gov/walkinaccess/authorization",
+   "needed_for": "Every WIA property visit. Annual."
+  },
+  {
+   "id": "ptarmigan",
+   "name": "White-tailed ptarmigan permit",
+   "cost": "Free",
+   "where": "wildlife.utah.gov",
+   "needed_for": "Ptarmigan. Required.",
+   "new": true
+  },
+  {
+   "id": "hip",
+   "name": "HIP registration",
+   "cost": "Free",
+   "where": "wildlife.utah.gov",
+   "needed_for": "All migratory birds - waterfowl, dove, snipe, crane"
+  },
+  {
+   "id": "duckstamp",
+   "name": "Federal duck stamp",
+   "cost": "~$25",
+   "where": "USPS or wildlife.utah.gov",
+   "needed_for": "Waterfowl, age 16+"
+  },
+  {
+   "id": "swancourse",
+   "name": "Swan orientation course",
+   "cost": "Free, ~30 min",
+   "where": "wildlife.utah.gov/swancourse",
+   "needed_for": "Applying for a tundra swan permit or point. Annual, every year."
+  },
+  {
+   "id": "extarchery",
+   "name": "Extended archery course",
+   "cost": "Free",
+   "where": "wildlife.utah.gov",
+   "needed_for": "Wasatch Front extended archery deer/elk"
+  }
+ ],
+ "legal": {
+  "written_permission": "Utah requires WRITTEN permission to hunt private land that is cultivated or properly posted. The permission must carry four things: the owner's signature, the name of the person given permission, the applicable dates, and a general description of the property. A verbal yes does not satisfy the statute.",
+  "cultivated": "Soil broken for crops, land used for crops, or artificially irrigated pasture - which covers most ag ground worth hunting.",
+  "posted": "'No Trespassing' signs, or at least 100 square inches of bright yellow, bright orange or fluorescent paint, at all corners, at stream crossings, and on roads, gates and rights-of-way.",
+  "penalty": "Class B misdemeanor. Taking wildlife while trespassing is a separate offense and can suspend your license privileges.",
+  "citation": "Utah Code 23A-6-402; wildlife.utah.gov/trespass"
+ }
+}

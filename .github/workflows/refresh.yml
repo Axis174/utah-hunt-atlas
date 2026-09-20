@@ -1,0 +1,88 @@
+name: Refresh hunt data
+
+on:
+  schedule:
+    # 11:15 UTC daily = 5:15 a.m. MDT / 4:15 a.m. MST
+    - cron: '15 11 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scraper/**'
+      - 'docs/data/seasons.json'
+      - 'docs/data/config.json'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Refresh upstream data
+        run: python scraper/refresh.py
+
+      - name: Rebuild calendar feed
+        run: python scraper/build_calendar.py
+
+      - name: Summarise the run
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path('docs/data/changelog.json')
+          if not p.exists():
+              print('no changelog'); raise SystemExit
+          run = json.loads(p.read_text())['runs'][0]
+          out = []
+          out.append(f"### Hunt data refresh — {run['run']}\n")
+          if run['changes']:
+              out.append(f"**{len(run['changes'])} source(s) changed**\n")
+              for c in run['changes']:
+                  out.append(f"- **{c['source']}** — {c.get('desc','')}")
+                  for d in (c.get('detail') or [])[:8]:
+                      if d['type'] == 'changed':
+                          out.append(f"  - `{d['item']}` · {d['field']}: “{d['from']}” → “{d['to']}”")
+                      else:
+                          out.append(f"  - {d['type']}: `{d['item']}`")
+          else:
+              out.append('No upstream changes.\n')
+          if run['errors']:
+              out.append(f"\n**{len(run['errors'])} source(s) failed**\n")
+              for e in run['errors']:
+                  out.append(f"- `{e['source']}` — {e['error'][:160]}")
+          txt = "\n".join(out)
+          print(txt)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write(txt + "\n")
+          PY
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name  "hunt-atlas-bot"
+          git config user.email "hunt-atlas-bot@users.noreply.github.com"
+          git add -A docs/
+          if git diff --staged --quiet; then
+            echo "nothing changed"
+          else
+            git commit -m "data: refresh $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
