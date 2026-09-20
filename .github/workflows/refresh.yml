@@ -75,10 +75,22 @@ jobs:
           git add -A docs/
           if git diff --staged --quiet; then
             echo "nothing changed"
-          else
-            git commit -m "data: refresh $(date -u +%Y-%m-%d)"
-            git push
+            exit 0
           fi
+          git commit -m "data: refresh $(date -u +%Y-%m-%d)"
+          # Another run (or a hand edit) can land between our checkout and our
+          # push. Rebase onto whatever arrived and retry rather than failing the
+          # whole refresh over a race.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "pushed on attempt $i"; exit 0
+            fi
+            echo "push rejected, rebasing (attempt $i)"
+            git pull --rebase --autostash origin main || true
+            sleep $(( i * 5 ))
+          done
+          echo "::warning::could not push refreshed data after 5 attempts; \
+          the Pages deploy below still publishes this run's output"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
