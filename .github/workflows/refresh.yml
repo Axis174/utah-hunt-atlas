@@ -9,8 +9,10 @@ on:
     branches: [main]
     paths:
       - 'scraper/**'
-      - 'docs/data/seasons.json'
-      - 'docs/data/config.json'
+      - 'docs/**'
+      - '.github/workflows/refresh.yml'
+    # The bot's own data commits use GITHUB_TOKEN, and GitHub does not trigger
+    # workflows from those, so watching docs/** cannot loop.
 
 permissions:
   contents: write
