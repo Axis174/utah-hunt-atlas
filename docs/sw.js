@@ -8,12 +8,12 @@
 
    Data is network-first with a cache fallback: a live refresh wins when there
    is signal, and the last good copy is there when there is none. */
-const VERSION = 'ranger-hawk-v5';
+const VERSION = 'ranger-hawk-v7';
 const SHELL = [
   './', './index.html', './app.js', './styles.css',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
   './data/bird_access.json', './data/seasons.json', './data/config.json',
-  './vendor/suncalc.js', './data/lake_level.json', './data/units_geo.json'
+  './vendor/suncalc.js', './data/lake_level.json', './data/units_geo.json', './data/snow.json'
 ];
 
 self.addEventListener('install', e => {
@@ -24,10 +24,33 @@ self.addEventListener('install', e => {
   );
 });
 
+// The offline map lives in its own cache so an app update never throws away a
+// 65 MB download.
+const MAPS = 'ranger-hawk-maps';
+let mapBlob = null;
+
+// PMTiles reads the map with byte-range requests. Answer them from the saved
+// copy when there is one; otherwise let the network handle it.
+async function mapRange(req) {
+  const url = req.url.split('?')[0];
+  if (!mapBlob || mapBlob.url !== url) {
+    const hit = await (await caches.open(MAPS)).match(url);
+    if (!hit) return fetch(req);
+    mapBlob = { url, blob: await hit.blob() };
+  }
+  const size = mapBlob.blob.size;
+  const m = /bytes=(\d+)-(\d*)/.exec(req.headers.get('range') || '');
+  if (!m) return new Response(mapBlob.blob, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(size), 'Accept-Ranges': 'bytes' } });
+  const start = +m[1], end = m[2] ? Math.min(+m[2], size - 1) : size - 1;
+  return new Response(mapBlob.blob.slice(start, end + 1), { status: 206, headers: {
+    'Content-Type': 'application/octet-stream', 'Accept-Ranges': 'bytes',
+    'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1) } });
+}
+
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(ks => Promise.all(ks.filter(k => k !== VERSION && k !== MAPS).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -41,6 +64,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+
+  if (url.pathname.endsWith('.pmtiles')) { e.respondWith(mapRange(req)); return; }
 
   // Data: network first, fall back to the last good copy.
   if (url.pathname.includes('/data/')) {

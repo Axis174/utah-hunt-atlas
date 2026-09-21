@@ -58,6 +58,13 @@ time from the selected home. Each one opens to season dates, restrictions,
 required permits, contact, source and confidence, plus a National Weather
 Service forecast for that spot when there is a signal.
 
+**Map** — all of Utah, offline. Roads, dirt two-tracks (brown dashes), trails
+(brown dots), water and place names, with DWR properties in green, Walk-In
+Access in amber, big game hunt unit lines in purple and the access points as
+dots you can tap. Tap anywhere for the property and hunt units at that spot. The
+GPS button follows you with no signal. **Save map for offline** stores the 65 MB
+map on the phone once; after that the map never needs a connection.
+
 **Seasons** — every season for birds, deer, elk and turkey with live open/closed
 state.
 
@@ -119,9 +126,20 @@ their terms forbid it, and anything built on them breaks within weeks and risks
 the account. What is used instead: UDWR's news page, Reddit's public feeds, and
 a hand-curated watch list in the app that you check yourself.
 
-Reddit rate-limits and sometimes blocks datacenter IPs, so it may fail from
-Actions. It fails gracefully and is recorded in `changelog.json`. To make it
-reliable, register a Reddit OAuth app and add the credentials as repo secrets.
+**How Reddit is read (rebuilt 2026-09-20).** Tested that day: Reddit returns an
+empty feed for any search by a logged-out reader, and allows an anonymous reader
+about one request per half minute. So the job reads the newest 100 posts of six
+communities, one at a time, waiting exactly as long as Reddit's own
+`x-ratelimit-reset` header says. National hunting communities (r/Hunting,
+r/elkhunting, r/bowhunting, r/Waterfowl) are filtered for Utah place names; Utah
+communities (r/Utah, r/SaltLakeCity) are filtered for hunting words. Matches are
+kept for 60 days, because most days have none. This adds about five minutes to
+the daily run. r/utahhunting was dropped: its only post dates from 2022.
+
+It is still the most fragile source here. Reddit has said its public feeds may
+close, and since November 2025 a new API key needs Reddit's approval even for a
+personal read-only script, under terms that are non-commercial. If the feed
+dies the app loses nothing else; failures are logged in `changelog.json`.
 
 ---
 
@@ -150,13 +168,30 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | Piece | Used for | Licence |
 |---|---|---|
 | [SunCalc](https://github.com/mourner/suncalc) 2.0.1, vendored in `docs/vendor/` | Sunrise and sunset for legal light, offline | BSD-2-Clause |
+| [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js) 5.24.0, vendored | Draws the map | BSD-3-Clause |
+| [PMTiles](https://github.com/protomaps/PMTiles) 4.5.0, vendored | Reads one map file by byte range, no tile server | BSD-3-Clause |
+| [Protomaps basemaps](https://github.com/protomaps/basemaps) 5.7.2 + fonts and icons, vendored | Map style; data extract `docs/maps/utah.pmtiles` | BSD-3-Clause code; map data (c) OpenStreetMap, ODbL - attribution is shown on the map and must stay |
+| [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
 | [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
 | [National Weather Service API](https://www.weather.gov/documentation/services-web-api) | Forecast per access point | public domain |
 
-Looked at and deliberately left out: **MapLibre GL + Protomaps PMTiles** (the right
-way to add an offline map, but a project of its own - a northern Utah basemap
-extract has to be built and size-tested first); **Open-Meteo** (its free tier is
+### Rebuilding the map file
+
+`docs/maps/utah.pmtiles` is a one-off extract, not part of the daily job (roads
+do not change daily, and every rebuild adds 65 MB to the repo history). To
+refresh it, once a year is plenty:
+
+    brew install pmtiles
+    pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles docs/maps/utah.pmtiles \
+      --bbox=-114.1,36.95,-109.0,42.05 --maxzoom=13
+
+Zoom 13 was chosen by test: dirt tracks and trails are already in the data at
+12-13, all of Utah is 65 MB, and zoom 14 would be 141 MB - over GitHub's 100 MB
+file limit. The service worker answers the map's byte-range reads from the saved
+copy, which lives in its own cache so an app update never discards it.
+
+Looked at and deliberately left out: **Open-Meteo** (its free tier is
 non-commercial only); **Turf.js** (half a megabyte to do one point-in-polygon
 test); **Workbox** (needs a build step this app does not have); and the one open
 hunting-regulation dataset on GitHub, which was archived in 2018.
@@ -165,6 +200,22 @@ Legal light is computed for Salt Lake City, which is what UDWR's own table uses,
 and rounded to the safe side. Checked against the 2026-27 guidebook table: it
 matches to the minute. The guidebook shifts a few minutes by county and remains
 the legal authority.
+
+## Worth adding next (checked 2026-09-20, not built)
+
+- **Land ownership** - Utah Trust Lands publishes federal / state / private / tribal
+  ownership as an open ArcGIS layer. The single most useful missing map layer, and
+  the core of what onX sells. Large; needs to be cut into its own PMTiles file
+  with [tippecanoe](https://github.com/felt/tippecanoe).
+- **USFS Motor Vehicle Use Map** - which forest roads are legally open, and when.
+  Public domain ArcGIS service (`EDW_MVUM_01`). Same treatment as above.
+- **Contour lines / hillshade** - possible offline with USGS 3DEP elevation and
+  [maplibre-contour](https://github.com/onthegomap/maplibre-contour). A build of its own.
+- **UDOT mountain pass status** (Mirror Lake Highway closure) - free, but needs a
+  UDOT developer key.
+- **eBird** recent sightings - free key, but the terms are non-commercial.
+- **[PWABuilder](https://github.com/pwa-builder/PWABuilder)** - packages this exact
+  app for the App Store and Play Store when the time comes, without a rewrite.
 
 ## Known gaps
 

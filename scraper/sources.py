@@ -84,14 +84,19 @@ WATCH_PAGES = {
 }
 
 # Community sources. Public, API-sanctioned or RSS only.
-REDDIT_RSS = "https://www.reddit.com/r/{sub}/new/.rss"
-# Utah-specific subs: take everything. General subs: only Utah-relevant posts.
-REDDIT_SUBS_ALL = ["utahhunting"]
-REDDIT_SUBS_FILTERED = ["Hunting", "elkhunting", "bowhunting"]
-REDDIT_SUBS = REDDIT_SUBS_ALL + REDDIT_SUBS_FILTERED
+REDDIT_RSS = "https://www.reddit.com/r/{sub}/new/.rss?limit=100"
+# (community, filter): "utah" keeps posts naming a Utah place; "hunt" keeps posts
+# with a hunting word. r/utahhunting was dropped - its only post is from 2022.
+REDDIT_FEEDS = [("Hunting", "utah"), ("elkhunting", "utah"), ("bowhunting", "utah"),
+                ("Waterfowl", "utah"), ("Utah", "hunt"), ("SaltLakeCity", "hunt")]
+REDDIT_HUNT_TERMS = ["hunt", "elk", "mule deer", "deer tag", "pheasant", "chukar", "duck season",
+                     "waterfowl", "ptarmigan", "grouse", "dwr", "wma", "draw results",
+                     "archery season", "muzzleloader", "shed antler", "big game"]
 REDDIT_SKIP = ["lounge", "megathread", "weekly thread", "daily thread"]
-REDDIT_TERMS = ["utah", "wasatch", "boulder mountain", "fishlake", "plateau",
-                "thousand lakes", "manti", "migration", "walk-in", "wia"]
+REDDIT_TERMS = ["utah", "wasatch", "uinta", "uintas", "boulder mountain", "fishlake",
+                "thousand lakes", "manti", "book cliffs", "henry mountains", "bear river",
+                "farmington bay", "ogden bay", "great salt lake", "strawberry reservoir",
+                "udwr", "utah dwr"]
 # UDWR advertises an RSS endpoint but it serves the HTML page, not a feed
 # (checked 2026-09-20). So the news listing is parsed directly - a public page,
 # no auth wall, light polling once a day.
@@ -123,4 +128,15 @@ LAKE_REFERENCE = {
     "record_low_when": "November 2022, south arm",
     "note": "State managers describe roughly 4,198-4,205 ft as the healthy range. "
             "Reference figures are hand-kept; confirm at water.utah.gov before relying on them.",
+}
+
+
+# NRCS SNOTEL snow gauges (public domain, keyless). Snow depth tells you whether
+# the high country is still reachable: Trial Lake sits beside the Mirror Lake
+# Highway, which is the ptarmigan access road and closes for winter.
+SNOTEL = {
+    "828:UT:SNTL": {"name": "Trial Lake", "where": "Uintas, Mirror Lake Hwy", "elev_ft": 9970},
+    "763:UT:SNTL": {"name": "Smith and Morehouse", "where": "Upper Weber, west Uintas", "elev_ft": 7600},
+    "820:UT:SNTL": {"name": "Timpanogos Divide", "where": "Wasatch above Heber", "elev_ft": 8140},
+    "452:UT:SNTL": {"name": "Donkey Reservoir", "where": "Boulder Mountain above Torrey", "elev_ft": 9800},
 }

@@ -7,7 +7,8 @@ records the failure and carries on, because a dead upstream should not blank
 out the app.
 """
 import hashlib, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from html import unescape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sources as S
@@ -245,11 +246,38 @@ save("application_watch.json", {"checked": report["run"], "hits": app_hits[:30]}
 
 # ------------------------------------------------------------- community ----
 community = []
-for sub in S.REDDIT_SUBS:
-    # Reddit's .json API returns 403 to unauthenticated clients (and hard-blocks
-    # datacenter IPs). The public Atom feed still serves, so use that.
+
+
+def reddit_feed(url):
+    """One polite read of a Reddit Atom feed. Anonymous readers get roughly one
+    request per half minute; Reddit says exactly how long in x-ratelimit-reset,
+    so wait that long afterwards instead of guessing. One retry on a 429."""
+    for attempt in (1, 2):
+        req = urllib.request.Request(url, headers=UA)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                body = r.read().decode("utf-8", "ignore")
+                wait = float(r.headers.get("x-ratelimit-reset") or 30)
+            time.sleep(min(wait, 90) + 3)
+            return body
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt == 1:
+                time.sleep(min(float(e.headers.get("x-ratelimit-reset") or
+                                     e.headers.get("retry-after") or 60), 120) + 5)
+                continue
+            raise
+    return ""
+
+
+# Search is closed to anonymous readers (it returns an empty feed), so read each
+# community's newest 100 posts and filter here. National hunting communities are
+# filtered for Utah place names; Utah communities are filtered for hunting words.
+RE_UTAH = re.compile(r"\b(" + "|".join(re.escape(t) for t in S.REDDIT_TERMS) + r")\b", re.I)
+RE_HUNT = re.compile(r"\b(" + "|".join(re.escape(t) for t in S.REDDIT_HUNT_TERMS) + r")", re.I)
+seen_reddit = 0
+for sub, mode in S.REDDIT_FEEDS:
     try:
-        xml = get(S.REDDIT_RSS.format(sub=sub), timeout=60).decode("utf-8", "ignore")
+        xml = reddit_feed(S.REDDIT_RSS.format(sub=sub))
         for m in re.finditer(r"<entry>(.*?)</entry>", xml, re.S):
             it = m.group(1)
             t = re.search(r"<title[^>]*>(.*?)</title>", it, re.S)
@@ -257,19 +285,29 @@ for sub in S.REDDIT_SUBS:
             u = re.search(r"<updated>(.*?)</updated>", it, re.S)
             if not (t and l):
                 continue
-            title = re.sub(r"<[^>]+>", "", t.group(1)).strip()
+            seen_reddit += 1
+            title = unescape(re.sub(r"<[^>]+>", "", t.group(1))).strip()
             low = title.lower()
-            if any(s in low for s in getattr(S, "REDDIT_SKIP", [])):
+            if any(k in low for k in S.REDDIT_SKIP):
                 continue
-            if sub in getattr(S, "REDDIT_SUBS_FILTERED", []) and \
-               not any(term in low for term in S.REDDIT_TERMS):
+            if not (RE_UTAH if mode == "utah" else RE_HUNT).search(title):
                 continue
-            community.append({"source": f"r/{sub}", "title": title[:220],
-                              "url": l.group(1),
-                              "created": (u.group(1).strip() if u else ""), "score": 0})
-        time.sleep(8)
+            community.append({"source": f"r/{sub}", "title": title[:220], "url": l.group(1),
+                              "created": (u.group(1).strip()[:10] if u else ""), "score": 0})
     except Exception as e:                # noqa: BLE001
         report["errors"].append({"source": f"reddit:{sub}", "error": repr(e)[:200]})
+
+# A single day rarely has a Utah hunting post, so keep what earlier runs found
+# for 60 days. Without this the section is empty most mornings.
+cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
+have = {c["url"] for c in community}
+for old in (load_prev("community.json") or {}).get("items", []):
+    if old.get("source", "").startswith("r/") and old.get("url") not in have \
+            and old.get("created", "")[:10] >= cutoff:
+        community.append(old)
+        have.add(old["url"])
+report["ok"].append({"source": "reddit", "posts_read": seen_reddit,
+                     "kept": sum(1 for c in community if c["source"].startswith("r/"))})
 for nm, url in S.NEWS_PAGES.items():
     try:
         html = get(url, timeout=60).decode("utf-8", "ignore")
@@ -295,7 +333,7 @@ for nm, url in S.NEWS_PAGES.items():
 community.sort(key=lambda x: x.get("created", ""), reverse=True)
 save("community.json", {"checked": report["run"], "items": community[:120],
                         "manual_watch": S.MANUAL_WATCH,
-                        "policy": "Official sources, Reddit's public API and RSS only. "
+                        "policy": "Official sources and Reddit's public feeds only, read slowly. "
                                   "Facebook and Instagram are deliberately excluded: they are "
                                   "auth-walled, their terms forbid scraping, and anything built "
                                   "on them breaks within weeks."})
@@ -329,6 +367,37 @@ try:
         report["errors"].append({"source": "lake_level", "error": "no readings returned"})
 except Exception as e:                    # noqa: BLE001
     report["errors"].append({"source": "lake_level", "error": repr(e)[:200]})
+
+# ------------------------------------------------------------------ snow ----
+try:
+    end = datetime.now(timezone.utc).date()
+    q = urllib.parse.urlencode({"stationTriplets": ",".join(S.SNOTEL), "elements": "SNWD,WTEQ",
+                                "duration": "DAILY", "beginDate": str(end - timedelta(days=10)),
+                                "endDate": str(end)})
+    raw = json.loads(get("https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?" + q, timeout=90))
+    snow = []
+    for st in raw:
+        meta = S.SNOTEL.get(st.get("stationTriplet"), {})
+        row = {"station": st.get("stationTriplet"), **meta}
+        for d in st.get("data", []):
+            code = d.get("stationElement", {}).get("elementCode")
+            vals = [v for v in d.get("values", []) if v.get("value") is not None]
+            if not vals:
+                continue
+            key = "depth_in" if code == "SNWD" else "water_in"
+            row[key] = vals[-1]["value"]
+            row[key + "_7d_ago"] = vals[max(0, len(vals) - 8)]["value"]
+            row["date"] = vals[-1]["date"][:10]
+        if "date" in row:
+            snow.append(row)
+    if snow:
+        save("snow.json", {"checked": report["run"], "stations": snow,
+                           "source": "USDA NRCS SNOTEL (AWDB REST API)"})
+        report["ok"].append({"source": "snow", "features": len(snow)})
+    else:
+        report["errors"].append({"source": "snow", "error": "no readings returned"})
+except Exception as e:                    # noqa: BLE001
+    report["errors"].append({"source": "snow", "error": repr(e)[:200]})
 
 # ------------------------------------------------------- hunt unit shapes ----
 # Simplified boundaries (about 200 m tolerance) so the phone can answer "which

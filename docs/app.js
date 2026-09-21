@@ -11,7 +11,7 @@ const days = (a, b) => Math.round((b - a) / DAY);
 const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const GC = { bird: 'var(--bird)', deer: 'var(--deer)', elk: 'var(--elk)', turkey: 'var(--turkey)' };
 
-let DB = { birds: [], seasons: null, config: null, community: null, lake: null };
+let DB = { birds: [], seasons: null, config: null, community: null, lake: null, snow: null };
 let SUN = null;          // SunCalc module, loaded after first paint
 let UNITS = null;        // hunt unit shapes, loaded the first time GPS is used
 let home = 'nsl';
@@ -31,12 +31,12 @@ async function load() {
       return j && j.offline ? dflt : j;
     } catch (e) { return dflt; }
   };
-  const [b, s, c, com, lake] = await Promise.all([
+  const [b, s, c, com, lake, snow] = await Promise.all([
     grab('bird_access.json', []), grab('seasons.json', null),
     grab('config.json', null), grab('community.json', null),
-    grab('lake_level.json', null)
+    grab('lake_level.json', null), grab('snow.json', null)
   ]);
-  DB = { birds: b || [], seasons: s, config: c, community: com, lake: lake };
+  DB = { birds: b || [], seasons: s, config: c, community: com, lake: lake, snow: snow };
   if (!DB.seasons || !DB.config) {
     $('view').innerHTML = '<p class="empty">Data could not load and nothing is cached yet.' +
       '<br>Open this once with a connection, then it works offline.</p>';
@@ -134,6 +134,17 @@ function cardLake() {
     A low lake means dry outer marsh units and longer walks to water; call the WMA before a long drive.</p></div>`;
 }
 
+/* ------------------------------------------------------------------ snow ---- */
+function cardSnow() {
+  const k = DB.snow;
+  if (!k || !k.stations || !k.stations.length) return '';
+  return `<div class="sec-title">Snow in the high country</div><div class="card">
+    <div class="stats">${k.stations.map(s => `<div class="stat"><div class="k">${esc(s.name)}</div>
+      <div class="v">${s.depth_in == null ? '--' : s.depth_in + ' in'}</div></div>`).join('')}</div>
+    <p class="fine">Snow depth at USDA SNOTEL gauges, read ${esc(k.stations[0].date || '')}. ${k.stations.map(s => `${esc(s.name)}: ${esc(s.where)}, ${Number(s.elev_ft).toLocaleString()} ft`).join('. ')}.
+    Trial Lake sits beside the Mirror Lake Highway, the ptarmigan road, which closes for winter once snow sticks.</p></div>`;
+}
+
 /* -------------------------------------------------------------- where am I -- */
 function inRing(x, y, ring) {
   let inside = false;
@@ -209,6 +220,161 @@ async function loadWx(lat, lon) {
   }
 }
 
+/* ------------------------------------------------------------------ map ---- */
+/* MapLibre GL + a single Protomaps PMTiles file for all of Utah (zoom 0-13, with
+   dirt tracks and trails). Libraries load only when the Map tab is opened. The
+   service worker answers the map's byte-range reads from the saved copy, so once
+   "Save map for offline" has run, the whole thing works with no signal. */
+const MAP_FILE = 'maps/utah.pmtiles';
+const MAP_CACHE = 'ranger-hawk-maps';
+const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js',
+  'maps/sprites/light.json', 'maps/sprites/light.png', 'maps/sprites/light@2x.json', 'maps/sprites/light@2x.png',
+  'data/units_geo.json', 'data/raw_dwr_properties.json', 'data/raw_wia_properties.json']
+  .concat(['Noto Sans Regular', 'Noto Sans Medium', 'Noto Sans Italic'].flatMap(f =>
+    ['0-255', '256-511', '8192-8447'].map(r => 'maps/fonts/' + encodeURIComponent(f) + '/' + r + '.pbf')));
+let MAP = null, mapLibs = null;
+const abs = rel => new URL(rel, location.href).href;
+const SPC = { duck: '#2F6F8F', pheasant: '#A0522D', chukar: '#8A6D1F', ptarmigan: '#5B5F97' };
+
+function addScript(src) {
+  return new Promise((ok, no) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); });
+}
+function loadMapLibs() {
+  if (!mapLibs) {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/maplibre-gl.css'; document.head.appendChild(css);
+    mapLibs = addScript('vendor/maplibre-gl.js').then(() => Promise.all([addScript('vendor/pmtiles.js'), addScript('vendor/basemaps.js')]))
+      .catch(e => { mapLibs = null; throw e; });
+  }
+  return mapLibs;
+}
+async function mapSaved() {
+  try { const c = await caches.open(MAP_CACHE); return !!(await c.match(abs(MAP_FILE))); } catch (e) { return false; }
+}
+function vMap() {
+  return `<div class="mapwrap"><div id="map"></div>
+    <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
+    <button class="btn ghost" id="mapsave" data-mapsave="1" hidden>Save map for offline &middot; 65 MB</button></div></div>`;
+}
+async function refreshMapBar(msg) {
+  const st = $('mapstate'), b = $('mapsave');
+  if (!st) return;
+  const saved = await mapSaved();
+  if (!$('mapstate')) return;
+  st.textContent = msg || (saved ? 'Map saved on this phone. Works with no signal.' : 'Map is streaming. Save it before you lose signal.');
+  b.hidden = saved || !('caches' in window);
+}
+async function saveMap() {
+  const st = $('mapstate'), b = $('mapsave');
+  b.disabled = true;
+  try {
+    const c = await caches.open(MAP_CACHE);
+    await Promise.allSettled(MAP_ASSETS.map(u => c.add(new Request(u, { cache: 'reload' }))));
+    const r = await fetch(MAP_FILE, { cache: 'reload' });
+    if (!r.ok || !r.body) throw new Error('download failed');
+    const total = +r.headers.get('content-length') || 65452871;
+    const rd = r.body.getReader(); const parts = []; let got = 0;
+    for (;;) {
+      const { done, value } = await rd.read();
+      if (done) break;
+      parts.push(value); got += value.length;
+      if ($('mapstate')) $('mapstate').textContent = 'Saving map: ' + Math.round(got / total * 100) + '%';
+    }
+    await c.put(abs(MAP_FILE), new Response(new Blob(parts), { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(got) } }));
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+    refreshMapBar();
+  } catch (e) {
+    if (st) st.textContent = 'Could not save the map: ' + (e.message || e) + '. Try again on Wi-Fi.';
+    if (b) b.disabled = false;
+  }
+}
+/* The stock style draws dirt tracks and trails almost white. For hunting they are
+   the point, so tracks become a brown dashed line, foot paths a dotted one, and
+   small-road names show two zoom levels sooner. */
+function huntLayers() {
+  const L = basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' });
+  const out = [];
+  for (const l of L) {
+    if (l.id === 'roads_other') {
+      out.push(Object.assign({}, l, { id: 'hunt_tracks', filter: ['all', l.filter, ['!=', 'kind_detail', 'path'], ['!=', 'kind_detail', 'footway']],
+        paint: { 'line-color': '#8A5A2B', 'line-dasharray': [3, 1.5], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 13, 1.6, 16, 3] } }));
+      out.push(Object.assign({}, l, { id: 'hunt_paths', filter: ['all', l.filter, ['in', 'kind_detail', 'path', 'footway']],
+        paint: { 'line-color': '#8A5A2B', 'line-dasharray': [1, 1.5], 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.6, 14, 1.4, 16, 2.4] } }));
+      continue;
+    }
+    if (l.id === 'roads_minor') l.paint = Object.assign({}, l.paint, { 'line-color': '#ffffff' });
+    if (l.id === 'roads_minor_casing') l.paint = Object.assign({}, l.paint, { 'line-color': '#b9b3a6' });
+    if (l.id === 'roads_labels_minor') l.minzoom = 13;
+    out.push(l);
+  }
+  return out;
+}
+async function initMap() {
+  if (!$('map')) return;
+  try { await loadMapLibs(); } catch (e) { $('mapstate').textContent = 'The map needs one visit with a signal before it works offline.'; return; }
+  if (!$('map')) return;
+  if (!initMap.proto) { const pr = new pmtiles.Protocol(); maplibregl.addProtocol('pmtiles', pr.tile); initMap.proto = true; }
+  const h = (DB.config.homes || []).find(x => x.id === home) || { lat: 40.76, lon: -111.89 };
+  let view = null; try { view = JSON.parse(localStorage.getItem('ha.mapview')); } catch (e) { /* none */ }
+  MAP = new maplibregl.Map({
+    container: 'map', attributionControl: { compact: true },
+    center: view ? view.c : [h.lon, h.lat], zoom: view ? view.z : 9, maxZoom: 16.5,
+    maxBounds: [[-116.5, 35.5], [-106.5, 43.5]],
+    style: {
+      version: 8,
+      glyphs: abs('maps/fonts/') + '{fontstack}/{range}.pbf',
+      sprite: abs('maps/sprites/light'),
+      sources: { protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
+        attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>' } },
+      layers: huntLayers()
+    }
+  });
+  MAP.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+  MAP.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showAccuracyCircle: true }), 'top-right');
+  MAP.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
+  MAP.on('moveend', () => { try { const c = MAP.getCenter(); localStorage.setItem('ha.mapview', JSON.stringify({ c: [c.lng, c.lat], z: MAP.getZoom() })); } catch (e) { /* private mode */ } });
+  MAP.on('load', async () => {
+    const grab = async f => { try { const j = await (await fetch('data/' + f)).json(); return j && !j.offline ? j : null; } catch (e) { return null; } };
+    const [dwr, wia, ug] = await Promise.all([grab('raw_dwr_properties.json'), grab('raw_wia_properties.json'), grab('units_geo.json')]);
+    if (!MAP || !MAP.getStyle()) return;
+    if (dwr) {
+      MAP.addSource('dwr', { type: 'geojson', data: dwr });
+      MAP.addLayer({ id: 'dwr-fill', type: 'fill', source: 'dwr', paint: { 'fill-color': '#1B6A5C', 'fill-opacity': 0.22 } });
+      MAP.addLayer({ id: 'dwr-line', type: 'line', source: 'dwr', paint: { 'line-color': '#1B6A5C', 'line-width': 1.2 } });
+      MAP.addLayer({ id: 'dwr-name', type: 'symbol', source: 'dwr', minzoom: 10, layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Medium'], 'text-size': 11, 'text-max-width': 8 }, paint: { 'text-color': '#0F4A40', 'text-halo-color': '#fff', 'text-halo-width': 1.2 } });
+    }
+    if (wia) {
+      MAP.addSource('wia', { type: 'geojson', data: wia });
+      MAP.addLayer({ id: 'wia-fill', type: 'fill', source: 'wia', paint: { 'fill-color': '#B7791F', 'fill-opacity': 0.25 } });
+      MAP.addLayer({ id: 'wia-line', type: 'line', source: 'wia', paint: { 'line-color': '#B7791F', 'line-width': 1.2, 'line-dasharray': [2, 1] } });
+    }
+    if (ug && ug.units) {
+      UNITS = UNITS || ug.units;
+      MAP.addSource('units', { type: 'geojson', data: { type: 'FeatureCollection', features: ug.units.map(u => ({ type: 'Feature', properties: { n: u.n }, geometry: { type: 'MultiPolygon', coordinates: u.p } })) } });
+      MAP.addLayer({ id: 'units-line', type: 'line', source: 'units', paint: { 'line-color': '#7A1F5C', 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.6, 12, 1.8], 'line-opacity': 0.7 } });
+    }
+    MAP.addSource('pts', { type: 'geojson', data: { type: 'FeatureCollection', features: DB.birds.map(p => ({ type: 'Feature', properties: { id: p.id, name: p.name, sp: String(p.species || '').split(/[\/,; ]+/)[0] }, geometry: { type: 'Point', coordinates: [p.lon, p.lat] } })) } });
+    MAP.addLayer({ id: 'pts', type: 'circle', source: 'pts', paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 12, 8], 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5,
+      'circle-color': ['match', ['get', 'sp'], 'duck', SPC.duck, 'pheasant', SPC.pheasant, 'chukar', SPC.chukar, 'ptarmigan', SPC.ptarmigan, '#333'] } });
+    MAP.addLayer({ id: 'pts-name', type: 'symbol', source: 'pts', minzoom: 9.5, layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Medium'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top', 'text-max-width': 9 }, paint: { 'text-color': '#1c1c1c', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } });
+    MAP.on('click', 'pts', e => { const p = DB.birds.find(x => x.id === e.features[0].properties.id); if (p) { openSheet(sheetPoint(p)); loadWx(p.lat, p.lon); } });
+    MAP.on('click', e => {
+      if (MAP.queryRenderedFeatures(e.point, { layers: ['pts'] }).length) return;
+      const hit = MAP.queryRenderedFeatures(e.point, { layers: ['dwr-fill', 'wia-fill'].filter(id => MAP.getLayer(id)) })[0];
+      const un = UNITS ? unitsAt(e.lngLat.lng, e.lngLat.lat).map(u => esc(u.n)) : [];
+      if (!hit && !un.length) return;
+      const pr = hit ? hit.properties : {};
+      const nm = pr.name || pr['UDWR.DWRADMIN.WIA_Properties.Name'] || '';
+      new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat).setHTML(
+        (nm ? `<b>${esc(nm)}</b><br>${hit.layer.id === 'wia-fill' ? 'Walk-In Access property' : esc(pr.type_ || 'DWR property')}<br>` : '') +
+        (un.length ? `<span class="mono" style="font-size:11px">Hunt units: ${un.join(' &middot; ')}</span>` : '')).addTo(MAP);
+    });
+    MAP.on('mouseenter', 'pts', () => { MAP.getCanvas().style.cursor = 'pointer'; });
+    MAP.on('mouseleave', 'pts', () => { MAP.getCanvas().style.cursor = ''; });
+  });
+  refreshMapBar();
+}
+
 /* ---------------------------------------------------------------- views --- */
 function vToday() {
   const up = upcoming(), on = openNow();
@@ -237,6 +403,7 @@ function vToday() {
   h += `</div>`;
 
   h += cardLake();
+  h += cardSnow();
   h += `<div class="sec-title">What is coming</div><div class="card">`;
   h += up.slice(0, 6).map(x => `<button class="row" data-dl="${esc(x.d.id)}" style="--g:var(--accent)">
       <span class="pill"></span>
@@ -430,6 +597,7 @@ function sheetDeadline(d) {
 /* --------------------------------------------------------------- render --- */
 const TABS = [
   ['today', 'Today', '<path d="M3 10h18M7 3v4M17 3v4"/><rect x="3" y="5" width="18" height="16" rx="2"/>'],
+  ['map', 'Map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>'],
   ['access', 'Access', '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
   ['seasons', 'Seasons', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
   ['remind', 'Remind', '<path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/>'],
@@ -448,12 +616,16 @@ function renderChrome() {
     `<button data-tab="${k}"${tab === k ? ' aria-current="page"' : ''}>
       <span style="position:relative"><svg viewBox="0 0 24 24">${path}</svg>${k === 'remind' && n ? `<span class="badge">${n}</span>` : ''}</span>
       <span>${label}</span></button>`).join('');
-  $('title').textContent = { today: 'Today', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
+  $('title').textContent = { today: 'Today', map: 'Map', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
 }
 function render() {
   renderChrome();
-  const v = { today: vToday, access: vAccess, seasons: vSeasons, remind: vReminders, contacts: vContacts }[tab];
+  if (MAP && tab !== 'map') { try { MAP.remove(); } catch (e) { /* already gone */ } MAP = null; }
+  if (tab === 'map' && MAP) { renderChrome(); return; }
+  const v = { today: vToday, map: vMap, access: vAccess, seasons: vSeasons, remind: vReminders, contacts: vContacts }[tab];
   $('view').innerHTML = v();
+  document.body.classList.toggle('on-map', tab === 'map');
+  if (tab === 'map') initMap();
   const q = $('q');
   if (q) {
     q.addEventListener('input', e => { query = e.target.value; const s = e.target.selectionStart; render(); const n = $('q'); if (n) { n.focus(); n.setSelectionRange(s, s); } });
@@ -462,12 +634,13 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
   if (t.dataset.where) { whereAmI(); return; }
+  if (t.dataset.mapsave) { saveMap(); return; }
   if (t.dataset.pt) { const p = DB.birds.find(x => x.id === t.dataset.pt); if (p) { openSheet(sheetPoint(p)); loadWx(p.lat, p.lon); } return; }
   if (t.dataset.season) { const s = DB.seasons.seasons.find(x => x.id === t.dataset.season); if (s) openSheet(sheetSeason(s)); return; }
   if (t.dataset.dl) { const d = DB.seasons.deadlines.find(x => x.id === t.dataset.dl); if (d) openSheet(sheetDeadline(d)); return; }
