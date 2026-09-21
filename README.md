@@ -183,6 +183,8 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | [PMTiles](https://github.com/protomaps/PMTiles) 4.5.0, vendored | Reads one map file by byte range, no tile server | BSD-3-Clause |
 | [Protomaps basemaps](https://github.com/protomaps/basemaps) 5.7.2 + fonts and icons, vendored | Map style; data extract `docs/maps/utah.pmtiles` | BSD-3-Clause code; map data (c) OpenStreetMap, ODbL - attribution is shown on the map and must stay |
 | [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
+| [maplibre-contour](https://github.com/onthegomap/maplibre-contour) 0.1.1, vendored | Draws contour lines on the phone from elevation tiles | BSD-3-Clause |
+| [Mapterhorn](https://mapterhorn.com) elevation tiles (USGS 3DEP in the US) | Contours and hill shading | open; attribution shown on the map |
 | [USFS Motor Vehicle Use Map](https://www.fs.usda.gov/visit/maps/mvum) data | Which forest roads are legally open, to what, and when | public domain |
 | [tippecanoe](https://github.com/felt/tippecanoe) 2.x (build tool, not shipped) | Cuts the land ownership layer into an offline map file | BSD-2-Clause |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
@@ -235,6 +237,42 @@ emergency and fire closures separately and those are not in here. A road missing
 from the MVUM is closed to motor vehicles even if it exists on the ground. BLM
 and state roads are not covered - this is National Forest land only.
 
+### Terrain: contour lines and hill shading
+
+Pre-drawn contour lines for a whole state run to hundreds of megabytes. Instead
+the app carries compact elevation tiles and draws the contours on the phone with
+[maplibre-contour](https://github.com/onthegomap/maplibre-contour) 0.1.1 (BSD-3);
+MapLibre shades the hills from the same tiles.
+
+- `docs/maps/terrain-utah.pmtiles` (60 MB) - all of Utah to zoom 10, about 58 m
+  per pixel.
+- `docs/maps/terrain-detail.pmtiles` (40 MB) - zoom 11, about 29 m per pixel, for
+  two blocks: Wasatch-Uintas-Box Elder (-113.2,39.7 to -109.9,42.05) and
+  Boulder-Fishlake (-112.4,37.6 to -110.8,39.0).
+
+Both are extracts of [Mapterhorn](https://mapterhorn.com) (terrarium encoding,
+512 px WebP tiles; in the US the source is USGS 3DEP, public domain; Mapterhorn
+asks for the attribution link the map shows). Outside the two detail blocks the
+app cuts the zoom-10 parent tile into its quadrant and doubles it with smoothing
+off - smoothing would blend the colour channels separately and corrupt the
+encoded heights. Checked 2026-09-21: Kings Peak reads 13,465 ft (true 13,528),
+Timpanogos 11,654 (11,752), Moab 4,032 (about 4,026); the fallback path returns
+the same heights as its parent.
+
+Contour interval by zoom: 200 ft (index 1,000) at zoom 11, 100 ft (index 500) at
+12-13, 50 ft (index 250) from 14. Labels in feet on index lines. **The 50 ft lines
+are interpolated from 29-58 m data: good for reading the shape of the country,
+not for judging a cliff band.** Terrain is a separate, optional 100 MB download
+("Save terrain") and has its own on/off chip.
+
+    pmtiles extract https://download.mapterhorn.com/planet.pmtiles docs/maps/terrain-utah.pmtiles \
+      --bbox=-114.1,36.95,-109.0,42.05 --maxzoom=10
+    pmtiles extract https://download.mapterhorn.com/planet.pmtiles docs/maps/terrain-detail.pmtiles \
+      --region=detail-blocks.geojson --minzoom=11 --maxzoom=11
+
+Zoom 12 (15 m) would be sharper but is 598 MB statewide; a single hunting block
+at zoom 12 is about 45 MB and could be added the same way.
+
 ### Rebuilding the map file
 
 `docs/maps/utah.pmtiles` is a one-off extract, not part of the daily job (roads
@@ -262,8 +300,6 @@ the legal authority.
 
 ## Worth adding next (checked 2026-09-20, not built)
 
-- **Contour lines / hillshade** - possible offline with USGS 3DEP elevation and
-  [maplibre-contour](https://github.com/onthegomap/maplibre-contour). A build of its own.
 - **UDOT mountain pass status** (Mirror Lake Highway closure) - free, but needs a
   UDOT developer key.
 - **eBird** recent sightings - free key, but the terms are non-commercial.

@@ -228,8 +228,13 @@ async function loadWx(lat, lon) {
 const MAP_FILE = 'maps/utah.pmtiles';
 const LAND_FILE = 'maps/land.pmtiles';      // Utah Trust Lands ownership, cut with tippecanoe
 const MVUM_FILE = 'maps/mvum.pmtiles';      // USFS Motor Vehicle Use Map: legal roads and motorized trails
+/* Elevation (Mapterhorn, terrarium-encoded, 512 px tiles). All of Utah to zoom 10
+   (about 58 m per pixel) plus zoom 11 (about 29 m) for the Wasatch-Uintas-Box Elder
+   and Boulder-Fishlake blocks. maplibre-contour turns it into contour lines on the
+   phone; MapLibre shades the hills from the same tiles. */
+const DEM_FILES = ['maps/terrain-utah.pmtiles', 'maps/terrain-detail.pmtiles'];
 const MAP_CACHE = 'ranger-hawk-maps';
-const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js',
+const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js', 'vendor/maplibre-contour.js',
   'maps/sprites/light.json', 'maps/sprites/light.png', 'maps/sprites/light@2x.json', 'maps/sprites/light@2x.png',
   'data/units_geo.json', 'data/raw_dwr_properties.json', 'data/raw_wia_properties.json']
   .concat(['Noto Sans Regular', 'Noto Sans Medium', 'Noto Sans Italic'].flatMap(f =>
@@ -245,8 +250,8 @@ const LAND = [
 ];
 const LAND_NOTE = { private: 'Private. Written permission required.', tribal: 'Tribal land. A state permit does not cover it.',
   nps: 'National Park. No hunting.', military: 'Military. Closed.', sitla: 'State trust land. Generally open to hunting; check for leases and closures.' };
-let landOn = true, roadsOn = true, veh = 't', keyOn = false;
-try { landOn = localStorage.getItem('ha.land') !== '0'; roadsOn = localStorage.getItem('ha.mvum') !== '0'; veh = localStorage.getItem('ha.veh') === 'a' ? 'a' : 't'; } catch (e) { /* private mode */ }
+let landOn = true, roadsOn = true, veh = 't', keyOn = false, terrainOn = true;
+try { landOn = localStorage.getItem('ha.land') !== '0'; roadsOn = localStorage.getItem('ha.mvum') !== '0'; veh = localStorage.getItem('ha.veh') === 'a' ? 'a' : 't'; terrainOn = localStorage.getItem('ha.terrain') !== '0'; } catch (e) { /* private mode */ }
 const MV = { open: '#1E8E3E', closed: '#C62828', no: '#8C8C8C' };
 const mmdd = () => { const n = new Date(); return (n.getMonth() + 1) * 100 + n.getDate(); };
 /* Colour a forest road by whether the chosen vehicle may legally be on it today.
@@ -275,41 +280,50 @@ function addScript(src) {
 function loadMapLibs() {
   if (!mapLibs) {
     const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/maplibre-gl.css'; document.head.appendChild(css);
-    mapLibs = addScript('vendor/maplibre-gl.js').then(() => Promise.all([addScript('vendor/pmtiles.js'), addScript('vendor/basemaps.js')]))
+    mapLibs = addScript('vendor/maplibre-gl.js').then(() => Promise.all([addScript('vendor/pmtiles.js'), addScript('vendor/basemaps.js'), addScript('vendor/maplibre-contour.js')]))
       .catch(e => { mapLibs = null; throw e; });
   }
   return mapLibs;
 }
-async function mapSaved() {
-  try { const c = await caches.open(MAP_CACHE); return !!(await c.match(abs(MAP_FILE))) && !!(await c.match(abs(LAND_FILE))) && !!(await c.match(abs(MVUM_FILE))); } catch (e) { return false; }
+async function allSaved(files) {
+  try { const c = await caches.open(MAP_CACHE); for (const f of files) if (!(await c.match(abs(f)))) return false; return true; } catch (e) { return false; }
 }
+const BASE_FILES = [[MVUM_FILE, 'legal roads', 3400000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]];
+const TERRAIN_FILES = [[DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
+const mapSaved = () => allSaved(BASE_FILES.map(f => f[0]));
+const terrainSaved = () => allSaved(TERRAIN_FILES.map(f => f[0]));
 function vMap() {
   return `<div class="mapwrap"><div id="map"></div>
     <div class="legend" id="legend"></div>
     <div class="mapbar"><span class="chips">
       <button class="chip" data-landtoggle="1" id="landbtn" aria-pressed="${landOn}">Land</button>
-      <button class="chip" data-roadstoggle="1" id="roadsbtn" aria-pressed="${roadsOn}">Legal roads</button>
+      <button class="chip" data-roadstoggle="1" id="roadsbtn" aria-pressed="${roadsOn}">Roads</button>
+      <button class="chip" data-terraintoggle="1" id="terrainbtn" aria-pressed="${terrainOn}">Terrain</button>
       <button class="chip" data-veh="t" aria-pressed="${veh === 't'}">Truck</button><button class="chip" data-veh="a" aria-pressed="${veh === 'a'}">ATV</button>
       <button class="chip" data-keytoggle="1" id="keybtn" aria-pressed="${keyOn}">Key</button>
     </span></div>
     <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
-    <button class="btn ghost" id="mapsave" data-mapsave="1" hidden>Save offline &middot; 75 MB</button></div></div>`;
+    <button class="btn ghost" id="mapsave" data-mapsave="base" hidden>Save map &middot; 75 MB</button>
+    <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 100 MB</button></div></div>`;
 }
 async function refreshMapBar(msg) {
-  const st = $('mapstate'), b = $('mapsave');
-  if (!st) return;
-  const saved = await mapSaved();
   if (!$('mapstate')) return;
-  st.textContent = msg || (saved ? 'Map saved on this phone. Works with no signal.' : 'Map is streaming. Save it before you lose signal.');
-  b.hidden = saved || !('caches' in window);
+  const [base, dem] = await Promise.all([mapSaved(), terrainSaved()]);
+  if (!$('mapstate')) return;
+  $('mapstate').textContent = msg || (base && dem ? 'Map and terrain saved. Works with no signal.'
+    : base ? 'Map saved. Terrain still needs a signal.' : 'Map is streaming. Save it before you lose signal.');
+  const can = 'caches' in window;
+  $('mapsave').hidden = base || !can;
+  $('demsave').hidden = dem || !can;
 }
-async function saveMap() {
-  const st = $('mapstate'), b = $('mapsave');
+async function saveMap(which) {
+  const files = which === 'terrain' ? TERRAIN_FILES : BASE_FILES;
+  const b = $(which === 'terrain' ? 'demsave' : 'mapsave');
   b.disabled = true;
   try {
     const c = await caches.open(MAP_CACHE);
     await Promise.allSettled(MAP_ASSETS.map(u => c.add(new Request(u, { cache: 'reload' }))));
-    for (const [file, label, guess] of [[MVUM_FILE, 'legal roads', 3400000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]]) {
+    for (const [file, label, guess] of files) {
       const r = await fetch(file, { cache: 'reload' });
       if (!r.ok || !r.body) throw new Error('download failed');
       const total = +r.headers.get('content-length') || guess;
@@ -325,9 +339,45 @@ async function saveMap() {
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
     refreshMapBar();
   } catch (e) {
-    if (st) st.textContent = 'Could not save the map: ' + (e.message || e) + '. Try again on Wi-Fi.';
-    if (b) b.disabled = false;
+    if ($('mapstate')) $('mapstate').textContent = 'Could not save: ' + (e.message || e) + '. Try again on Wi-Fi.';
   }
+  if (b) b.disabled = false;
+}
+/* Elevation tiles come out of two PMTiles files. Where the zoom-11 detail file has
+   no tile (outside the two detail blocks), the zoom-10 parent is cut into its
+   quadrant and doubled with no smoothing - smoothing would blend the three colour
+   channels separately and corrupt the encoded heights. */
+function demSource() {
+  if (demSource.src) return demSource.src;
+  const A = new pmtiles.PMTiles(abs(DEM_FILES[0])), B = new pmtiles.PMTiles(abs(DEM_FILES[1]));
+  const src = new mlcontour.DemSource({ url: 'rhdem/{z}/{x}/{y}', encoding: 'terrarium', maxzoom: 11, worker: false, cacheSize: 120, timeoutMs: 20000 });
+  src.manager.getTile = async (url, ac) => {
+    const [z, x, y] = url.split('/').slice(-3).map(Number);
+    const t = await (z >= 11 ? B : A).getZxy(z, x, y, ac && ac.signal);
+    if (t && t.data) return { data: new Blob([t.data], { type: 'image/webp' }) };
+    if (z === 11) {
+      const par = await A.getZxy(10, x >> 1, y >> 1, ac && ac.signal);
+      if (par && par.data) {
+        const bmp = await createImageBitmap(new Blob([par.data], { type: 'image/webp' }), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+        const n = bmp.width, h = n / 2, cv = document.createElement('canvas');
+        cv.width = cv.height = n;
+        const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false;
+        cx.drawImage(bmp, (x & 1) * h, (y & 1) * h, h, h, 0, 0, n, n);
+        return { data: await new Promise(ok => cv.toBlob(ok, 'image/png')) };
+      }
+    }
+    throw new Error('no elevation tile ' + z + '/' + x + '/' + y);
+  };
+  src.setupMaplibre(maplibregl);
+  demSource.src = src;
+  return src;
+}
+const TERRAIN_LAYERS = ['hills', 'contour-line', 'contour-label'];
+function toggleTerrain() {
+  terrainOn = !terrainOn;
+  try { localStorage.setItem('ha.terrain', terrainOn ? '1' : '0'); } catch (e) { /* private mode */ }
+  if (MAP && MAP.getStyle()) TERRAIN_LAYERS.forEach(id => MAP.getLayer(id) && MAP.setLayoutProperty(id, 'visibility', terrainOn ? 'visible' : 'none'));
+  if ($('terrainbtn')) $('terrainbtn').setAttribute('aria-pressed', terrainOn);
 }
 /* The stock style draws dirt tracks and trails almost white. For hunting they are
    the point, so tracks become a brown dashed line, foot paths a dotted one, and
@@ -351,14 +401,19 @@ function huntLayers() {
   // Ownership goes under the roads and labels so they stay readable on top of it.
   const at = out.findIndex(l => /^roads_/.test(l.id));
   const vis = landOn ? 'visible' : 'none';
+  const tv = terrainOn ? 'visible' : 'none';
   out.splice(at < 0 ? out.length : at, 0,
+    { id: 'hills', type: 'hillshade', source: 'dem', layout: { visibility: tv },
+      paint: { 'hillshade-exaggeration': 0.45, 'hillshade-shadow-color': '#3a3a32', 'hillshade-highlight-color': '#ffffff', 'hillshade-accent-color': '#5a5a4a' } },
     { id: 'land-fill', type: 'fill', source: 'land', 'source-layer': 'land', layout: { visibility: vis },
       filter: ['!=', 'c', 'private'],
       paint: { 'fill-opacity': 0.42, 'fill-color': ['match', ['get', 'c']].concat(LAND.flatMap(l => [l[0], l[2]]), ['#cccccc']) } },
     { id: 'land-private', type: 'fill', source: 'land', 'source-layer': 'land', layout: { visibility: vis },
       filter: ['==', 'c', 'private'], paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.55 } },
     { id: 'land-line', type: 'line', source: 'land', 'source-layer': 'land', minzoom: 9, layout: { visibility: vis },
-      paint: { 'line-color': '#5a5a4a', 'line-opacity': 0.45, 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.3, 13, 1] } });
+      paint: { 'line-color': '#5a5a4a', 'line-opacity': 0.45, 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.3, 13, 1] } },
+    { id: 'contour-line', type: 'line', source: 'contours', 'source-layer': 'contours', minzoom: 11, layout: { visibility: tv },
+      paint: { 'line-color': '#7A5230', 'line-opacity': ['match', ['get', 'level'], 1, 0.75, 0.4], 'line-width': ['match', ['get', 'level'], 1, 1.1, 0.5] } });
   // Legal forest roads sit above the base roads and below the road names.
   const lb = out.findIndex(l => l.type === 'symbol' && /^roads_/.test(l.id));
   const rv = roadsOn ? 'visible' : 'none';
@@ -370,6 +425,9 @@ function huntLayers() {
       paint: { 'line-color': mvColor(), 'line-width': w } },
     { id: 'mvum-trail', type: 'line', source: 'mvum', 'source-layer': 'mvum', filter: ['==', 'k', 't'], layout: { visibility: rv },
       paint: { 'line-color': mvColor(), 'line-width': w, 'line-dasharray': [2, 1.2] } },
+    { id: 'contour-label', type: 'symbol', source: 'contours', 'source-layer': 'contours', minzoom: 12, filter: ['==', ['get', 'level'], 1],
+      layout: { visibility: tv, 'symbol-placement': 'line', 'text-field': ['concat', ['number-format', ['get', 'ele'], {}], ' ft'], 'text-font': ['Noto Sans Italic'], 'text-size': 10, 'symbol-spacing': 380 },
+      paint: { 'text-color': '#6B4423', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } },
     { id: 'mvum-num', type: 'symbol', source: 'mvum', 'source-layer': 'mvum', minzoom: 11,
       layout: { visibility: rv, 'symbol-placement': 'line', 'text-field': ['get', 'id'], 'text-font': ['Noto Sans Medium'], 'text-size': 10, 'symbol-spacing': 320 },
       paint: { 'text-color': '#1c1c1c', 'text-halo-color': '#fff', 'text-halo-width': 1.6 } });
@@ -420,7 +478,13 @@ async function initMap() {
       version: 8,
       glyphs: abs('maps/fonts/') + '{fontstack}/{range}.pbf',
       sprite: abs('maps/sprites/light'),
-      sources: { mvum: { type: 'vector', url: 'pmtiles://' + abs(MVUM_FILE), attribution: 'Roads: USFS MVUM' }, land: { type: 'vector', url: 'pmtiles://' + abs(LAND_FILE), attribution: 'Land: Utah Trust Lands' }, protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
+      sources: {
+        dem: { type: 'raster-dem', tiles: [demSource().sharedDemProtocolUrl], encoding: 'terrarium', tileSize: 512, maxzoom: 11,
+          attribution: 'Terrain: <a href="https://mapterhorn.com/attribution">Mapterhorn</a>' },
+        contours: { type: 'vector', maxzoom: 15, tiles: [demSource().contourProtocolUrl({ multiplier: 3.28084, overzoom: 1,
+          thresholds: { 11: [200, 1000], 12: [100, 500], 13: [100, 500], 14: [50, 250] },
+          elevationKey: 'ele', levelKey: 'level', contourLayer: 'contours' })] },
+        mvum: { type: 'vector', url: 'pmtiles://' + abs(MVUM_FILE), attribution: 'Roads: USFS MVUM' }, land: { type: 'vector', url: 'pmtiles://' + abs(LAND_FILE), attribution: 'Land: Utah Trust Lands' }, protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
         attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>' } },
       layers: huntLayers()
     }
@@ -744,13 +808,14 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
   if (t.dataset.where) { whereAmI(); return; }
-  if (t.dataset.mapsave) { saveMap(); return; }
+  if (t.dataset.mapsave) { saveMap(t.dataset.mapsave); return; }
+  if (t.dataset.terraintoggle) { toggleTerrain(); return; }
   if (t.dataset.landtoggle) { toggleLand(); return; }
   if (t.dataset.roadstoggle) { toggleRoads(); return; }
   if (t.dataset.veh) { setVeh(t.dataset.veh); return; }
