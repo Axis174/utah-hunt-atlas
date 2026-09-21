@@ -889,6 +889,7 @@ const TABS = [
   ['today', 'Today', '<path d="M3 10h18M7 3v4M17 3v4"/><rect x="3" y="5" width="18" height="16" rx="2"/>'],
   ['map', 'Map', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>'],
   ['access', 'Access', '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
+  ['cams', 'Cams', '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/>'],
   ['seasons', 'Seasons', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
   ['remind', 'Remind', '<path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/>'],
   ['contacts', 'Contacts', '<path d="M4 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4z"/><circle cx="11" cy="11" r="2.5"/><path d="M7.5 17c.8-1.7 2-2.5 3.5-2.5s2.7.8 3.5 2.5"/>']
@@ -906,14 +907,14 @@ function renderChrome() {
     `<button data-tab="${k}"${tab === k ? ' aria-current="page"' : ''}>
       <span style="position:relative"><svg viewBox="0 0 24 24">${path}</svg>${k === 'remind' && n ? `<span class="badge">${n}</span>` : ''}</span>
       <span>${label}</span></button>`).join('');
-  const ttl = { today: 'Today', map: 'Map', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
+  const ttl = { today: 'Today', map: 'Map', cams: 'Trail cameras', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
   if (tab === 'today') $('title').innerHTML = '<img src="icons/rangerhawk-wordmark.svg" alt="Ranger Hawk">'; else $('title').textContent = ttl;
 }
 function render() {
   renderChrome();
   if (MAP && tab !== 'map') { try { MAP.remove(); } catch (e) { /* already gone */ } MAP = null; }
   if (tab === 'map' && MAP) { renderChrome(); return; }
-  const v = { today: vToday, map: vMap, access: vAccess, seasons: vSeasons, remind: vReminders, contacts: vContacts }[tab];
+  const v = { today: vToday, map: vMap, cams: (typeof vCams === 'function' ? vCams : () => '<p class="empty">Camera log did not load.</p>'), access: vAccess, seasons: vSeasons, remind: vReminders, contacts: vContacts }[tab];
   $('view').innerHTML = v();
   document.body.classList.toggle('on-map', tab === 'map');
   if (tab === 'map') initMap();

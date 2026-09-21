@@ -76,6 +76,24 @@ dots you can tap. Tap anywhere for the property and hunt units at that spot. The
 GPS button follows you with no signal. **Save map for offline** stores the 65 MB
 map on the phone once; after that the map never needs a connection.
 
+**Cams** — a trail camera log that lives entirely on the phone (`docs/cams.js`).
+Make a camera site, bring in the photos from its SD card, and the app reads the
+time the camera stamped on each one, keeps a 640 px copy in the browser's own
+database (about 20 KB a photo), flags black and featureless frames, and sorts
+the rest with the most likely animals first by comparing each night frame with
+the site's typical empty frame. Tag with one tap (elk bull, elk cow, deer buck,
+and so on); tagging moves to the next photo. **Patterns** turns tagged photos
+into visits (frames under five minutes apart count once) and charts them by hour
+against legal shooting light for that date, with moon phase and a plain read-out
+("20% of visits were in legal light - this is mostly a night spot"). Each site
+carries its state and land type, and the screen shows that state's trail camera
+rule from `docs/data/cam_rules.json`, in red when a seasonal ban is in force
+today. Nothing is uploaded; there is no account and no backup. Tested on 130
+real Stealth Cam photos from 2018: 0.3 s a photo on a laptop, 30 flagged blank.
+Known weakness of the sort: frames of the camera being handled score highest,
+and an animal at the dark edge of the flash scores low, so nothing is ever
+hidden or deleted automatically.
+
 **Seasons** — every season for birds, deer, elk and turkey with live open/closed
 state. A **Draw odds** switch shows UDWR's published draw results: pick limited
 entry, general deer or antlerless, a species, resident or nonresident, and your
@@ -197,6 +215,16 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
 | [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
 | [National Weather Service API](https://www.weather.gov/documentation/services-web-api) | Forecast per access point | public domain |
+
+### Trail camera rules by state
+
+`docs/data/cam_rules.json`, researched 2026-09-21. High confidence (agency or
+state code read directly): Utah, Arizona, Nevada, Idaho (new for 2026), Alaska.
+Medium (legal-code mirrors or consistent reporting): Kansas, Montana, New
+Mexico, Wyoming, Colorado, Oregon, Washington. Low: California. **Re-check every
+summer** - Idaho changed in 2026, Nevada and Washington have changes under
+discussion, Montana had a bill moving. The file says so per state, and the app
+labels it as not legal advice.
 
 ### Draw odds
 

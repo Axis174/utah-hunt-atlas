@@ -1,0 +1,113 @@
+{
+ "_note": "Plain-language summaries of state trail camera rules for hunting, researched 2026-09-21. ban_from / ban_to are month*100+day for a calendar restriction; scope 'public' = public land only, 'all' = everywhere. confidence: high = read on the agency's or the state's own code; medium = legal-code mirrors or consistent reporting. NOT legal advice.",
+ "states": {
+  "UT": {
+   "name": "Utah",
+   "ban_from": 731,
+   "ban_to": 1231,
+   "scope": "public",
+   "confidence": "high",
+   "checked": "2026-09-21",
+   "plain": "Trail cameras are prohibited on public land from July 31 to Dec 31. On private land a camera that stores photos internally and cannot transmit is allowed. Selling or buying camera photos or data (images, locations, times) that could help take big game, cougar or bear is prohibited. Night-vision devices may not be carried while locating big game in the same window.",
+   "cite": "Utah Code 23A-5-307; Rule R657-5-7; 2026 Big Game Field Regulations p. 48; wildlife.utah.gov/trailcams."
+  },
+  "AZ": {
+   "name": "Arizona",
+   "ban_from": 101,
+   "ban_to": 1231,
+   "scope": "all",
+   "confidence": "high",
+   "checked": "2026-09-21",
+   "plain": "Trail cameras may not be used to take, or help take or locate, wildlife - year-round, on public and private land, transmitting or not.",
+   "cite": "Arizona Administrative Code R12-4-303(A)(5), in effect since Jan 1 2022."
+  },
+  "NV": {
+   "name": "Nevada",
+   "ban_from": 801,
+   "ban_to": 1231,
+   "scope": "public",
+   "confidence": "high",
+   "checked": "2026-09-21",
+   "plain": "No trail cameras on public land from Aug 1 to Dec 31. Cameras that transmit are barred a month longer, from July 1. The commission discussed changes in 2025, so check before next season.",
+   "cite": "Nevada Administrative Code 503.1485."
+  },
+  "ID": {
+   "name": "Idaho",
+   "ban_from": 830,
+   "ban_to": 1231,
+   "scope": "public",
+   "confidence": "high",
+   "checked": "2026-09-21",
+   "plain": "New for 2026: cameras that transmit (cellular or satellite) may not be used on federal, state or local government land from Aug 30 to Dec 31 for hunting or scouting big game, bear or game birds. Cameras that only store photos are not restricted, and private land is not affected.",
+   "cite": "Idaho House Bill 939 (2026); 2026 Big Game Seasons and Rules pp. 95-96; idfg.idaho.gov."
+  },
+  "KS": {
+   "name": "Kansas",
+   "ban_from": 101,
+   "ban_to": 1231,
+   "scope": "public",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "No trail cameras of any kind, year-round, on land managed by Kansas Wildlife and Parks or on Walk-In Hunting Access areas. Private land is not affected.",
+   "cite": "KDWP Commission regulation adopted March 2023 (regulation number not confirmed)."
+  },
+  "MT": {
+   "name": "Montana",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "While hunting, it is unlawful to use a device that tracks game movement and relays it to the hunter - in practice, cameras that transmit. Cameras that only store photos are not covered. A 2025 bill may have changed the wording; check the current regulations.",
+   "cite": "Montana Code 87-6-401."
+  },
+  "NM": {
+   "name": "New Mexico",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "Cameras that transmit by cellular, Wi-Fi or satellite may not be used to hunt or scout big game, year-round. Cameras that only store photos are not covered by this rule.",
+   "cite": "New Mexico Administrative Code 19.31.10."
+  },
+  "WY": {
+   "name": "Wyoming",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "Only cameras that store photos internally and cannot transmit may be used for taking big game, trophy game or bison. Cellular and Wi-Fi cameras may not.",
+   "cite": "Wyoming Game and Fish Commission regulation, Use of Specialized Hunting Technologies and Equipment."
+  },
+  "CO": {
+   "name": "Colorado",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "A camera that transmits pictures live may not be used to find game that you then take the same day or the next day. Cameras that only store photos are exempt.",
+   "cite": "2 CCR 406-0, Article IV #004."
+  },
+  "AK": {
+   "name": "Alaska",
+   "confidence": "high",
+   "checked": "2026-09-21",
+   "plain": "Pictures or data from a wireless device, including a wireless trail camera, may not be used to take a specific animal until after 3:00 a.m. the next day.",
+   "cite": "5 AAC 92.080."
+  },
+  "OR": {
+   "name": "Oregon",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "No statewide trail camera restriction was found. Oregon's ban on night-vision and thermal devices does not cover trail cameras.",
+   "cite": "ODFW, Regulations limit use of tech during hunting seasons."
+  },
+  "WA": {
+   "name": "Washington",
+   "confidence": "medium",
+   "checked": "2026-09-21",
+   "plain": "No restriction was found for the 2026 seasons. The commission is reviewing hunting technology rules for 2027-29, so this may change.",
+   "cite": "WDFW 2026 big game regulations announcement."
+  },
+  "CA": {
+   "name": "California",
+   "confidence": "low",
+   "checked": "2026-09-21",
+   "plain": "No rule against using trail cameras during hunting season was found. On land managed by the Department of Fish and Wildlife, property left unattended may have to be removed daily. A petition on trail cameras was pending in 2026.",
+   "cite": "Secondary reporting only - confirm with CDFW."
+  }
+ },
+ "federal": "On any federal land, a camera is unattended property: many forests and BLM offices treat gear left more than 10 to 14 days as abandoned, National Wildlife Refuges often ban cameras or require a permit, and designated Wilderness generally does not allow installations. Check the specific unit.",
+ "records": "Boone and Crockett and Pope and Young do not accept animals taken with the help of a camera that sent the hunter real-time pictures prompting an immediate move on the animal."
+}
