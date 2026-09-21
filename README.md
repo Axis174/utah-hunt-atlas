@@ -278,18 +278,23 @@ MapLibre shades the hills from the same tiles.
   two blocks: Wasatch-Uintas-Box Elder (-113.2,39.7 to -109.9,42.05) and
   Boulder-Fishlake (-112.4,37.6 to -110.8,39.0).
 
-Both are extracts of [Mapterhorn](https://mapterhorn.com) (terrarium encoding,
+- `docs/maps/terrain-boulder.pmtiles` (19 MB) - zoom 12, about 15 m per pixel,
+  for Boulder Mountain, the Aquarius Plateau, Thousand Lake Mountain and Torrey
+  (-112.0,37.8 to -111.0,38.6). Added 2026-09-21.
+
+All three are extracts of [Mapterhorn](https://mapterhorn.com) (terrarium encoding,
 512 px WebP tiles; in the US the source is USGS 3DEP, public domain; Mapterhorn
-asks for the attribution link the map shows). Outside the two detail blocks the
-app cuts the zoom-10 parent tile into its quadrant and doubles it with smoothing
-off - smoothing would blend the colour channels separately and corrupt the
+asks for the attribution link the map shows). Where a finer file has no tile, the app
+cuts the parent tile into its quadrant and doubles it with smoothing off (twice
+over if need be, so a zoom-12 request far from any detail block is built from
+zoom 10) - smoothing would blend the colour channels separately and corrupt the
 encoded heights. Checked 2026-09-21: Kings Peak reads 13,465 ft (true 13,528),
 Timpanogos 11,654 (11,752), Moab 4,032 (about 4,026); the fallback path returns
 the same heights as its parent.
 
 Contour interval by zoom: 200 ft (index 1,000) at zoom 11, 100 ft (index 500) at
-12-13, 50 ft (index 250) from 14. Labels in feet on index lines. **The 50 ft lines
-are interpolated from 29-58 m data: good for reading the shape of the country,
+12-13, 40 ft (index 200) from 14. Labels in feet on index lines. **Outside the Boulder block the 40 ft
+lines are interpolated from 29-58 m data: good for reading the shape of the country,
 not for judging a cliff band.** Terrain is a separate, optional 100 MB download
 ("Save terrain") and has its own on/off chip.
 
@@ -298,8 +303,11 @@ not for judging a cliff band.** Terrain is a separate, optional 100 MB download
     pmtiles extract https://download.mapterhorn.com/planet.pmtiles docs/maps/terrain-detail.pmtiles \
       --region=detail-blocks.geojson --minzoom=11 --maxzoom=11
 
-Zoom 12 (15 m) would be sharper but is 598 MB statewide; a single hunting block
-at zoom 12 is about 45 MB and could be added the same way.
+Zoom 12 (15 m) is 598 MB statewide, so it is added one hunting block at a time.
+To add another: extract it with `--minzoom=12 --maxzoom=12` and either merge the
+bounding boxes into one region file for a single zoom-12 archive, or teach
+`demSource()` to try more than one archive per zoom. The Wasatch-Uintas block at
+zoom 12 is about 44 MB.
 
 ### Rebuilding the map file
 

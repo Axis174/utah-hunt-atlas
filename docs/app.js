@@ -233,7 +233,8 @@ const BLM_FILE = 'maps/blm.pmtiles';        // BLM Utah: designated routes + are
    (about 58 m per pixel) plus zoom 11 (about 29 m) for the Wasatch-Uintas-Box Elder
    and Boulder-Fishlake blocks. maplibre-contour turns it into contour lines on the
    phone; MapLibre shades the hills from the same tiles. */
-const DEM_FILES = ['maps/terrain-utah.pmtiles', 'maps/terrain-detail.pmtiles'];
+const DEM_FILES = ['maps/terrain-utah.pmtiles', 'maps/terrain-detail.pmtiles', 'maps/terrain-boulder.pmtiles'];   // zoom 0-10, 11, 12
+const DEM_MAXZOOM = 12;
 const MAP_CACHE = 'ranger-hawk-maps';
 const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js', 'vendor/maplibre-contour.js',
   'maps/sprites/light.json', 'maps/sprites/light.png', 'maps/sprites/light@2x.json', 'maps/sprites/light@2x.png',
@@ -292,7 +293,7 @@ async function allSaved(files) {
   try { const c = await caches.open(MAP_CACHE); for (const f of files) if (!(await c.match(abs(f)))) return false; return true; } catch (e) { return false; }
 }
 const BASE_FILES = [[MVUM_FILE, 'forest roads', 3400000], [BLM_FILE, 'BLM roads', 8000000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]];
-const TERRAIN_FILES = [[DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
+const TERRAIN_FILES = [[DEM_FILES[2], 'Boulder terrain', 19000000], [DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
 const mapSaved = () => allSaved(BASE_FILES.map(f => f[0]));
 const terrainSaved = () => allSaved(TERRAIN_FILES.map(f => f[0]));
 function vMap() {
@@ -307,7 +308,7 @@ function vMap() {
     </span></div>
     <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
     <button class="btn ghost" id="mapsave" data-mapsave="base" hidden>Save map &middot; 83 MB</button>
-    <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 100 MB</button></div></div>`;
+    <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 120 MB</button></div></div>`;
 }
 async function refreshMapBar(msg) {
   if (!$('mapstate')) return;
@@ -352,24 +353,29 @@ async function saveMap(which) {
    channels separately and corrupt the encoded heights. */
 function demSource() {
   if (demSource.src) return demSource.src;
-  const A = new pmtiles.PMTiles(abs(DEM_FILES[0])), B = new pmtiles.PMTiles(abs(DEM_FILES[1]));
-  const src = new mlcontour.DemSource({ url: 'rhdem/{z}/{x}/{y}', encoding: 'terrarium', maxzoom: 11, worker: false, cacheSize: 120, timeoutMs: 20000 });
+  const arch = DEM_FILES.map(f => new pmtiles.PMTiles(abs(f)));      // [zoom 0-10, zoom 11, zoom 12]
+  // A tile as a Blob: from the file that owns that zoom if it has one, otherwise the
+  // parent tile's quadrant doubled with smoothing off (recursively, so a zoom-12
+  // tile outside every detail block is built from zoom 10).
+  async function tile(z, x, y, signal) {
+    const t = await arch[Math.max(0, z - 10)].getZxy(z, x, y, signal);
+    if (t && t.data) return new Blob([t.data], { type: 'image/webp' });
+    if (z <= 10) return null;
+    const par = await tile(z - 1, x >> 1, y >> 1, signal);
+    if (!par) return null;
+    const bmp = await createImageBitmap(par, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+    const n = bmp.width, h = n / 2, cv = document.createElement('canvas');
+    cv.width = cv.height = n;
+    const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false;
+    cx.drawImage(bmp, (x & 1) * h, (y & 1) * h, h, h, 0, 0, n, n);
+    return new Promise(ok => cv.toBlob(ok, 'image/png'));
+  }
+  const src = new mlcontour.DemSource({ url: 'rhdem/{z}/{x}/{y}', encoding: 'terrarium', maxzoom: DEM_MAXZOOM, worker: false, cacheSize: 120, timeoutMs: 20000 });
   src.manager.getTile = async (url, ac) => {
     const [z, x, y] = url.split('/').slice(-3).map(Number);
-    const t = await (z >= 11 ? B : A).getZxy(z, x, y, ac && ac.signal);
-    if (t && t.data) return { data: new Blob([t.data], { type: 'image/webp' }) };
-    if (z === 11) {
-      const par = await A.getZxy(10, x >> 1, y >> 1, ac && ac.signal);
-      if (par && par.data) {
-        const bmp = await createImageBitmap(new Blob([par.data], { type: 'image/webp' }), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
-        const n = bmp.width, h = n / 2, cv = document.createElement('canvas');
-        cv.width = cv.height = n;
-        const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false;
-        cx.drawImage(bmp, (x & 1) * h, (y & 1) * h, h, h, 0, 0, n, n);
-        return { data: await new Promise(ok => cv.toBlob(ok, 'image/png')) };
-      }
-    }
-    throw new Error('no elevation tile ' + z + '/' + x + '/' + y);
+    const data = await tile(z, x, y, ac && ac.signal);
+    if (!data) throw new Error('no elevation tile ' + z + '/' + x + '/' + y);
+    return { data };
   };
   src.setupMaplibre(maplibregl);
   demSource.src = src;
@@ -496,10 +502,10 @@ async function initMap() {
       glyphs: abs('maps/fonts/') + '{fontstack}/{range}.pbf',
       sprite: abs('maps/sprites/light'),
       sources: {
-        dem: { type: 'raster-dem', tiles: [demSource().sharedDemProtocolUrl], encoding: 'terrarium', tileSize: 512, maxzoom: 11,
+        dem: { type: 'raster-dem', tiles: [demSource().sharedDemProtocolUrl], encoding: 'terrarium', tileSize: 512, maxzoom: DEM_MAXZOOM,
           attribution: 'Terrain: <a href="https://mapterhorn.com/attribution">Mapterhorn</a>' },
         contours: { type: 'vector', maxzoom: 15, tiles: [demSource().contourProtocolUrl({ multiplier: 3.28084, overzoom: 1,
-          thresholds: { 11: [200, 1000], 12: [100, 500], 13: [100, 500], 14: [50, 250] },
+          thresholds: { 11: [200, 1000], 12: [100, 500], 13: [100, 500], 14: [40, 200] },
           elevationKey: 'ele', levelKey: 'level', contourLayer: 'contours' })] },
         blm: { type: 'vector', url: 'pmtiles://' + abs(BLM_FILE), attribution: 'BLM' },
         mvum: { type: 'vector', url: 'pmtiles://' + abs(MVUM_FILE), attribution: 'Roads: USFS MVUM' }, land: { type: 'vector', url: 'pmtiles://' + abs(LAND_FILE), attribution: 'Land: Utah Trust Lands' }, protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),

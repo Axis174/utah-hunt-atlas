@@ -8,7 +8,7 @@
 
    Data is network-first with a cache fallback: a live refresh wins when there
    is signal, and the last good copy is there when there is none. */
-const VERSION = 'ranger-hawk-v11';
+const VERSION = 'ranger-hawk-v12';
 const SHELL = [
   './', './index.html', './app.js', './styles.css',
   './manifest.webmanifest', './icons/rangerhawk-wordmark.png', './icons/icon-192.png', './icons/icon-512.png',
