@@ -647,9 +647,96 @@ function vAccess() {
   return h;
 }
 
+/* ------------------------------------------------------------ draw odds ---- */
+/* UDWR's published draw results, parsed by scraper/build_odds.py. These are LAST
+   YEAR'S RESULTS at each point level, not a forecast. Points the hunter types in
+   stay on the phone (localStorage) and are never sent anywhere. */
+let ODDS = null, oddsLoading = false, seasonsMode = 'dates';
+const DRAW_GROUPS = [['Limited entry and once-in-a-lifetime', 'Limited entry'], ['General-season buck deer', 'General deer'], ['Antlerless', 'Antlerless']];
+let draw = { res: 'r', grp: DRAW_GROUPS[0][0], sp: 'Elk', pts: {} };
+try { Object.assign(draw, JSON.parse(localStorage.getItem('ha.draw') || '{}')); } catch (e) { /* private mode */ }
+const saveDraw = () => { try { localStorage.setItem('ha.draw', JSON.stringify(draw)); } catch (e) { /* private mode */ } };
+const ptsKey = () => draw.grp + '|' + draw.sp;
+const myPts = () => draw.pts[ptsKey()] || 0;
+function loadOdds() {
+  if (ODDS || oddsLoading) return;
+  oddsLoading = true;
+  fetch('data/draw_odds.json').then(r => r.json()).then(j => { ODDS = j && j.years ? j : null; })
+    .catch(() => { ODDS = null; }).finally(() => { oddsLoading = false; if (tab === 'seasons') render(); });
+}
+function oddsAt(h, pts) {
+  const rows = h[draw.res] || [];
+  if (!rows.length) return { k: 'none', txt: 'No applicants', sort: -1 };
+  const top = Math.max(...rows.map(r => r[0]));
+  const row = rows.find(r => r[0] === pts);
+  if (!row) return pts > top ? { k: 'top', txt: 'Top of the pool', sort: 2 } : { k: 'none', txt: 'None at ' + pts + ' pts', sort: -1 };
+  const apps = row[1], got = row[2] + row[3];
+  if (!got) return { k: 'zero', txt: '0 of ' + apps + ' drew', sort: 0, apps, got };
+  if (got >= apps) return { k: 'all', txt: 'All ' + apps + ' drew', sort: 1.5, apps, got };
+  return { k: 'some', txt: '1 in ' + (apps / got).toFixed(1), pct: Math.round(got / apps * 100), sort: got / apps, apps, got };
+}
+function sureAt(h) {                       // lowest point level from which everyone who applied drew
+  const rows = (h[draw.res] || []).filter(r => r[1] > 0).sort((a, b) => b[0] - a[0]);
+  let sure = null;
+  for (const r of rows) { if (r[2] + r[3] >= r[1]) sure = r[0]; else break; }
+  return sure;
+}
+function vDraw() {
+  if (!ODDS) { loadOdds(); return `<p class="empty">${oddsLoading ? 'Loading draw results&hellip;' : 'Draw results are not on this phone yet. Open this once with a signal.'}</p>`; }
+  const yr = Object.keys(ODDS.years).sort().pop(), all = ODDS.years[yr];
+  const inGrp = Object.entries(all).filter(([, h]) => h.g === draw.grp);
+  const species = [...new Set(inGrp.map(([, h]) => h.s))].sort();
+  if (!species.includes(draw.sp)) draw.sp = species[0];
+  const kind = (inGrp.find(([, h]) => h.s === draw.sp) || [0, { k: 'b' }])[1].k === 'p' ? 'preference' : 'bonus';
+  const pts = myPts(), ql = query.trim().toLowerCase();
+  const list = inGrp.filter(([c, h]) => h.s === draw.sp && (!ql || (c + ' ' + h.n).toLowerCase().includes(ql)))
+    .map(([c, h]) => ({ c, h, o: oddsAt(h, pts), permits: (h[draw.res] || []).reduce((t, r) => t + r[2] + r[3], 0) }))
+    .sort((a, b) => b.o.sort - a.o.sort || b.permits - a.permits);
+  let h = `<div class="seg" style="margin-top:12px">${DRAW_GROUPS.map(g => `<button data-dgrp="${esc(g[0])}" aria-pressed="${draw.grp === g[0]}">${g[1]}</button>`).join('')}</div>
+    <div class="chipsrow">${species.map(sp => `<button class="chip" data-dsp="${esc(sp)}" aria-pressed="${draw.sp === sp}">${esc(sp)}</button>`).join('')}</div>
+    <div class="drawctl">
+      <div class="seg small"><button data-dres="r" aria-pressed="${draw.res === 'r'}">Resident</button><button data-dres="x" aria-pressed="${draw.res === 'x'}">Nonresident</button></div>
+      <div class="stepper"><button data-dpts="-1" aria-label="Fewer points">&minus;</button><span><b>${pts}</b> ${kind} point${pts === 1 ? '' : 's'}</span><button data-dpts="1" aria-label="More points">+</button></div>
+    </div>
+    <input class="search" id="q" placeholder="Search ${esc(draw.sp.toLowerCase())} hunts by unit, weapon or hunt code" value="${esc(query)}">
+    <div class="sec-title">${yr} results at ${pts} point${pts === 1 ? '' : 's'} &middot; ${list.length} hunt${list.length === 1 ? '' : 's'}</div><div class="card">`;
+  h += list.slice(0, 80).map(x => `<button class="row" data-draw="${esc(x.c)}" style="--g:${{ all: 'var(--brand)', top: 'var(--brand)', some: 'var(--accent)', zero: 'var(--crit)', none: 'var(--faint)' }[x.o.k]}">
+      <span class="pill"></span>
+      <span><span class="t">${esc(x.h.n)}</span><span class="s mono">${esc(x.c)} &middot; ${x.permits} permit${x.permits === 1 ? '' : 's'} to ${draw.res === 'r' ? 'residents' : 'nonresidents'}</span></span>
+      <span class="v dv">${esc(x.o.txt)}${x.o.pct != null ? `<small>${x.o.pct}%</small>` : ''}</span></button>`).join('') || '<p class="empty">No hunts match.</p>';
+  h += `</div>${list.length > 80 ? '<p class="fine">Showing the best 80. Search to narrow it.</p>' : ''}
+    <p class="fine"><b>Top of the pool</b> means nobody who applied last year had as many points as you. <b>None at N pts</b> means nobody applied with exactly your points.</p>
+    <p class="fine">These are UDWR's published <b>${yr} results</b>, not a forecast: what happened to people who applied with your number of points.
+    More people gain points every year, so the same points usually buy a little less next time. Your points are kept on this phone only.
+    Source: wildlife.utah.gov/biggame/odds. Always confirm at utahdraws.com before applying.</p>`;
+  return h;
+}
+function sheetDraw(code) {
+  const years = Object.keys(ODDS.years).sort().reverse(), yr = years[0], h = ODDS.years[yr][code];
+  if (!h) return '';
+  const pts = draw.pts[h.g + '|' + h.s] || 0, rows = (h[draw.res] || []).slice().sort((a, b) => b[0] - a[0]);
+  const tot = rows.reduce((t, r) => [t[0] + r[1], t[1] + r[2], t[2] + r[3]], [0, 0, 0]), sure = sureAt(h);
+  const prev = years[1] && ODDS.years[years[1]][code], po = prev ? oddsAt(prev, pts) : null, o = oddsAt(h, pts);
+  const bonus = h.k === 'b';
+  return `<h3>${esc(h.n)}</h3><p class="where mono">${esc(code)} &middot; ${esc(h.g)} &middot; ${draw.res === 'r' ? 'residents' : 'nonresidents'}</p>
+    <div class="stats">
+      <div class="stat"><div class="k">You, ${pts} pt${pts === 1 ? '' : 's'} (${yr})</div><div class="v" style="font-size:13px">${esc(o.txt)}</div></div>
+      ${po ? `<div class="stat"><div class="k">Same points, ${years[1]}</div><div class="v" style="font-size:13px">${esc(po.txt)}</div></div>` : ''}
+      <div class="stat"><div class="k">Everyone drew at</div><div class="v" style="font-size:13px">${sure == null ? 'no level' : sure + '+ pts'}</div></div>
+      <div class="stat"><div class="k">Permits / applicants</div><div class="v" style="font-size:13px">${tot[1] + tot[2]} / ${tot[0]}</div></div>
+    </div>
+    <table class="odds"><tr><th>Points</th><th>Applied</th><th>${bonus ? 'Bonus' : 'Drew'}</th>${bonus ? '<th>Random</th>' : ''}<th>Odds</th></tr>
+    ${rows.map(r => { const g = r[2] + r[3]; return `<tr${r[0] === pts ? ' class="me"' : ''}><td>${r[0]}</td><td>${r[1]}</td><td>${bonus ? r[2] : g}</td>${bonus ? `<td>${r[3]}</td>` : ''}<td>${!g ? '&mdash;' : g >= r[1] ? 'all' : '1 in ' + (r[1] / g).toFixed(1)}</td></tr>`; }).join('')}</table>
+    <p class="fine" style="padding:10px 16px">${bonus
+      ? 'Bonus-point hunt. Half the permits go straight to the applicants with the most points (the Bonus column). The other half are drawn at random, with one extra chance per point (the Random column), so anyone can draw.'
+      : 'Preference-point hunt. Permits go to the applicants with the most points first, so below the cut-off line the odds are effectively zero and above it everyone draws.'}
+    Last year&rsquo;s results, not a forecast. Point levels nobody applied at are left out.</p>`;
+}
+
 function vSeasons() {
   const groups = ['bird', 'deer', 'elk', 'turkey'];
-  let h = '';
+  let h = `<div class="seg" style="margin-top:14px"><button data-smode="dates" aria-pressed="${seasonsMode === 'dates'}">Season dates</button><button data-smode="draw" aria-pressed="${seasonsMode === 'draw'}">Draw odds</button></div>`;
+  if (seasonsMode === 'draw') return h + vDraw();
   for (const g of groups) {
     const rows = (DB.seasons.seasons || []).filter(s => s.group === g)
       .map(s => ({ s, st: seasonState(s) }))
@@ -838,11 +925,17 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle],[data-smode],[data-dgrp],[data-dsp],[data-dres],[data-dpts],[data-draw]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
+  if (t.dataset.smode) { seasonsMode = t.dataset.smode; query = ''; render(); return; }
+  if (t.dataset.dgrp) { draw.grp = t.dataset.dgrp; query = ''; saveDraw(); render(); return; }
+  if (t.dataset.dsp) { draw.sp = t.dataset.dsp; saveDraw(); render(); return; }
+  if (t.dataset.dres) { draw.res = t.dataset.dres; saveDraw(); render(); return; }
+  if (t.dataset.dpts) { draw.pts[ptsKey()] = Math.max(0, Math.min(40, myPts() + (+t.dataset.dpts))); saveDraw(); render(); return; }
+  if (t.dataset.draw) { openSheet(sheetDraw(t.dataset.draw)); return; }
   if (t.dataset.where) { whereAmI(); return; }
   if (t.dataset.mapsave) { saveMap(t.dataset.mapsave); return; }
   if (t.dataset.terraintoggle) { toggleTerrain(); return; }

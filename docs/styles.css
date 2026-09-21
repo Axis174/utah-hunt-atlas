@@ -173,3 +173,20 @@ header.bar{background:#2C2C2C;border-bottom:3px solid #1D95CA}
 .pophr{border:0;border-top:1px solid #ddd;margin:6px 0}
 .mapbar+.mapbar{border-top:0;padding-top:0}
 .legend[hidden]{display:none}
+
+/* draw odds */
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;border-right:1px solid var(--line);background:none;padding:9px 6px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--brand-char,#2C2C2C);color:#fff}
+.seg.small button{padding:7px 10px;font-size:12px}
+.chipsrow{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.drawctl{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.stepper{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--body)}
+.stepper button{width:34px;height:34px;border-radius:17px;border:1px solid var(--accent);background:none;color:var(--accent);font-size:18px;line-height:1;cursor:pointer}
+table.odds{width:calc(100% - 32px);margin:14px 16px 0;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12px}
+table.odds th{text-align:right;font-weight:500;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.odds td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--hair)}
+table.odds tr.me td{background:var(--accent-soft);font-weight:700;color:var(--ink)}
+.row .v.dv{font-size:12.5px;max-width:104px;white-space:normal;text-align:right;line-height:1.25}
+.row .v.dv small{display:block}

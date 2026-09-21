@@ -77,7 +77,12 @@ GPS button follows you with no signal. **Save map for offline** stores the 65 MB
 map on the phone once; after that the map never needs a connection.
 
 **Seasons** — every season for birds, deer, elk and turkey with live open/closed
-state.
+state. A **Draw odds** switch shows UDWR's published draw results: pick limited
+entry, general deer or antlerless, a species, resident or nonresident, and your
+points; every hunt lists what happened last year to people with your points,
+best first. Tap a hunt for the full point table (bonus and random permits shown
+separately), the same points a year earlier, and the level at which everyone
+drew. Points you enter stay on the phone.
 
 **Reminders** — calendar subscription, every deadline, and the permit checklist.
 
@@ -185,12 +190,31 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
 | [maplibre-contour](https://github.com/onthegomap/maplibre-contour) 0.1.1, vendored | Draws contour lines on the phone from elevation tiles | BSD-3-Clause |
 | [Mapterhorn](https://mapterhorn.com) elevation tiles (USGS 3DEP in the US) | Contours and hill shading | open; attribution shown on the map |
+| UDWR [big game draw results](https://wildlife.utah.gov/biggame/odds) (PDF) | Draw odds by hunt and point level | public record |
 | BLM [Ground Transportation Linear Features](https://gis.blm.gov/arcgis/rest/services/transportation/BLM_Natl_GTLF_Public_Display/MapServer) and BLM Utah OHV designations | BLM roads, trails and area travel rules | public domain |
 | [USFS Motor Vehicle Use Map](https://www.fs.usda.gov/visit/maps/mvum) data | Which forest roads are legally open, to what, and when | public domain |
 | [tippecanoe](https://github.com/felt/tippecanoe) 2.x (build tool, not shipped) | Cuts the land ownership layer into an offline map file | BSD-2-Clause |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
 | [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
 | [National Weather Service API](https://www.weather.gov/documentation/services-web-api) | Forecast per access point | public domain |
+
+### Draw odds
+
+`docs/data/draw_odds.json` (about 600 KB) is built by `scraper/build_odds.py`
+from three UDWR PDFs per year - limited entry and once-in-a-lifetime, general
+buck deer, antlerless - at `wildlife.utah.gov/pdf/bg/<year>/`. 2025: 917 hunts.
+2024: 882. **The parser checks itself:** every hunt's rows must add up to the
+hunt's own Totals line, and odds recomputed from applicants and permits are
+compared with the ratio UDWR printed. Known UDWR print quirks it handles: past
+1 in 1,000 the PDF drops the leading "1"; and on two 2025 hunts UDWR's printed
+ratio disagrees with its own counts (the counts, which reconcile to the Totals
+line, are used; the disagreement is logged).
+
+Run it by hand once a year after results post (late May / June):
+`python3 scraper/build_odds.py` (needs `pdftotext`: `brew install poppler`).
+It is not in the daily job. **These are last year's results, not a forecast** -
+no point-creep model, no simulation. UDWR's newer odds pages live at
+utahdraws.com/drawodds; when the 2026 PDFs appear, add 2026 to `YEARS`.
 
 ### Land ownership layer
 
