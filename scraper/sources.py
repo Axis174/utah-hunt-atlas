@@ -110,3 +110,17 @@ MANUAL_WATCH = [
     {"name": "Utah Wildlife Migration Initiative",         "url": "https://wildlife.utah.gov/wildlife-migration-initiative.html"},
     {"name": "UGRC land ownership (check before you park)","url": "https://gis.trustlands.utah.gov/mapping/"},
 ]
+
+
+# Great Salt Lake gauges (USGS). South arm is the one that matters for the
+# Davis / Weber / Box Elder marshes; north arm is cut off by the railroad causeway.
+LAKE_SITES = {
+    "10010000": "Great Salt Lake, south arm (Saltair)",
+    "10010100": "Great Salt Lake, north arm (Saline)",
+}
+LAKE_REFERENCE = {
+    "record_low_ft": 4188.5,
+    "record_low_when": "November 2022, south arm",
+    "note": "State managers describe roughly 4,198-4,205 ft as the healthy range. "
+            "Reference figures are hand-kept; confirm at water.utah.gov before relying on them.",
+}

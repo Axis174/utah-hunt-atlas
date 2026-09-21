@@ -300,6 +300,73 @@ save("community.json", {"checked": report["run"], "items": community[:120],
                                   "auth-walled, their terms forbid scraping, and anything built "
                                   "on them breaks within weeks."})
 
+# ------------------------------------------------------------ lake level ----
+# Great Salt Lake surface elevation from USGS Water Services (public domain,
+# keyless). The level decides which marsh units hold water, so it is worth a
+# daily number. 30 days of readings gives a trend without storing history.
+try:
+    q = urllib.parse.urlencode({"sites": ",".join(S.LAKE_SITES), "parameterCd": "62614",
+                                "period": "P30D", "format": "json", "siteStatus": "all"})
+    raw = json.loads(get("https://waterservices.usgs.gov/nwis/iv/?" + q, timeout=90))
+    sites = []
+    for ts in raw["value"]["timeSeries"]:
+        code = ts["sourceInfo"]["siteCode"][0]["value"]
+        vals = [v for v in ts["values"][0]["value"] if float(v["value"]) > 0]
+        if not vals:
+            continue
+        first, last = vals[0], vals[-1]
+        sites.append({"site": code, "name": S.LAKE_SITES.get(code, code),
+                      "elev_ft": float(last["value"]), "at": last["dateTime"],
+                      "elev_30d_ago_ft": float(first["value"]), "from": first["dateTime"],
+                      "change_30d_ft": round(float(last["value"]) - float(first["value"]), 2)})
+    if sites:
+        save("lake_level.json", {"checked": report["run"], "sites": sites,
+                                 "reference": S.LAKE_REFERENCE,
+                                 "source": "USGS Water Services, parameter 62614 "
+                                           "(lake surface elevation, ft above NGVD 1929)"})
+        report["ok"].append({"source": "lake_level", "features": len(sites)})
+    else:
+        report["errors"].append({"source": "lake_level", "error": "no readings returned"})
+except Exception as e:                    # noqa: BLE001
+    report["errors"].append({"source": "lake_level", "error": repr(e)[:200]})
+
+# ------------------------------------------------------- hunt unit shapes ----
+# Simplified boundaries (about 200 m tolerance) so the phone can answer "which
+# unit am I standing in" with no signal. Attribute diffs still come from the
+# full-attribute pull above; this file is geometry only and is kept small.
+try:
+    base = S.ARCGIS["big_game_units"]["url"]
+    feats, offset = [], 0
+    while True:
+        q = urllib.parse.urlencode({"where": "1=1", "outFields": "Boundary_Name,BoundaryID",
+                                    "returnGeometry": "true", "outSR": 4326, "f": "geojson",
+                                    "maxAllowableOffset": 0.002, "geometryPrecision": 4,
+                                    "resultOffset": offset, "resultRecordCount": 2000})
+        gj = json.loads(get(base + "/query?" + q, timeout=180))
+        batch = gj.get("features", [])
+        feats.extend(batch)
+        if len(batch) < 2000:
+            break
+        offset += len(batch)
+    units = []
+    for f in feats:
+        g = f.get("geometry") or {}
+        polys = [g["coordinates"]] if g.get("type") == "Polygon" else g.get("coordinates", [])
+        if not polys:
+            continue
+        xs = [pt[0] for poly in polys for pt in poly[0]]
+        ys = [pt[1] for poly in polys for pt in poly[0]]
+        units.append({"n": f["properties"].get("Boundary_Name"),
+                      "id": f["properties"].get("BoundaryID"),
+                      "bb": [min(xs), min(ys), max(xs), max(ys)], "p": polys})
+    if len(units) >= 100:                 # never overwrite a good file with a partial pull
+        save("units_geo.json", {"checked": report["run"], "tolerance_m": 200, "units": units})
+        report["ok"].append({"source": "units_geo", "features": len(units)})
+    else:
+        report["errors"].append({"source": "units_geo", "error": f"only {len(units)} units returned"})
+except Exception as e:                    # noqa: BLE001
+    report["errors"].append({"source": "units_geo", "error": repr(e)[:200]})
+
 # ---------------------------------------------------------------- report ----
 log = load_prev("changelog.json") or {"runs": []}
 log["runs"].insert(0, report)

@@ -1,6 +1,8 @@
 # Ranger Hawk
 
-_Formerly "Utah Hunt Atlas". The repo and URL keep the old slug for now; the name goes back to RangerHawk, a hunting and fishing community site first built in 2016._
+**Live at https://rangerhawk.com** &middot; calendar feed at https://rangerhawk.com/hunt.ics
+
+_Formerly "Utah Hunt Atlas" (the repo keeps that slug). The name goes back to RangerHawk, a hunting and fishing community site first built in 2016._
 
 A personal, installable phone app plus a daily data refresh for Utah hunting —
 birds (pheasant, chukar, duck, ptarmigan) and big game (deer and elk, archery
@@ -18,8 +20,11 @@ Not affiliated with UDWR. Always confirm against the current guidebook and the
 enables Pages, waits for the deploy and verifies the live URLs. Sign in first
 with `gh auth login`, then `gh auth switch --user <username>`.
 
-**The app and calendar URLs change with the account name**, so re-add the home
-screen icon and re-subscribe to the calendar afterwards.
+The app answers at the custom domain **rangerhawk.com** (DNS at Cloudflare, two
+DNS-only CNAME records to `<account>.github.io`). After a move, set the custom
+domain on the new repo's Pages settings and repoint both CNAME records at the new
+account; the public address, the home screen icon and the calendar subscription
+all stay the same.
 
 ## Setup, once
 
@@ -42,12 +47,16 @@ work whether or not you ever open the app.
 
 ## What it does
 
-**Today** — the next deadline as a countdown, what is open right now, the five
-closest places to whichever home is selected, and what is coming.
+**Today** — the next deadline as a countdown, legal shooting light for the day,
+what is open right now, the five closest places to whichever home is selected,
+the Great Salt Lake level, and what is coming. **Where am I** reads the phone's
+GPS and names the big game hunt boundaries you are standing in plus the closest
+access points; it works with no signal once the app has been opened online.
 
 **Access** — all 88 bird access points, searchable, sorted by real road drive
 time from the selected home. Each one opens to season dates, restrictions,
-required permits, contact, source and confidence.
+required permits, contact, source and confidence, plus a National Weather
+Service forecast for that spot when there is a signal.
 
 **Seasons** — every season for birds, deer, elk and turkey with live open/closed
 state.
@@ -134,7 +143,33 @@ package upgrade.
 
 ---
 
+## Borrowed, and why
+
+Checked 2026-09-20 against what is current and maintained on GitHub.
+
+| Piece | Used for | Licence |
+|---|---|---|
+| [SunCalc](https://github.com/mourner/suncalc) 2.0.1, vendored in `docs/vendor/` | Sunrise and sunset for legal light, offline | BSD-2-Clause |
+| Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
+| [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
+| [National Weather Service API](https://www.weather.gov/documentation/services-web-api) | Forecast per access point | public domain |
+
+Looked at and deliberately left out: **MapLibre GL + Protomaps PMTiles** (the right
+way to add an offline map, but a project of its own - a northern Utah basemap
+extract has to be built and size-tested first); **Open-Meteo** (its free tier is
+non-commercial only); **Turf.js** (half a megabyte to do one point-in-polygon
+test); **Workbox** (needs a build step this app does not have); and the one open
+hunting-regulation dataset on GitHub, which was archived in 2018.
+
+Legal light is computed for Salt Lake City, which is what UDWR's own table uses,
+and rounded to the safe side. Checked against the 2026-27 guidebook table: it
+matches to the minute. The guidebook shifts a few minutes by county and remains
+the legal authority.
+
 ## Known gaps
+
+- Hunt unit shapes are simplified to about 200 m and overlap by hunt type. Near a
+  boundary, the Utah Hunt Planner and the permit govern.
 
 - Home anchors are town-level on purpose. Drive times were computed from a
   street-level point and stored as minutes, not coordinates.

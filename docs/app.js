@@ -11,7 +11,9 @@ const days = (a, b) => Math.round((b - a) / DAY);
 const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const GC = { bird: 'var(--bird)', deer: 'var(--deer)', elk: 'var(--elk)', turkey: 'var(--turkey)' };
 
-let DB = { birds: [], seasons: null, config: null, community: null };
+let DB = { birds: [], seasons: null, config: null, community: null, lake: null };
+let SUN = null;          // SunCalc module, loaded after first paint
+let UNITS = null;        // hunt unit shapes, loaded the first time GPS is used
 let home = 'nsl';
 let tab = 'today';
 let query = '';
@@ -29,11 +31,12 @@ async function load() {
       return j && j.offline ? dflt : j;
     } catch (e) { return dflt; }
   };
-  const [b, s, c, com] = await Promise.all([
+  const [b, s, c, com, lake] = await Promise.all([
     grab('bird_access.json', []), grab('seasons.json', null),
-    grab('config.json', null), grab('community.json', null)
+    grab('config.json', null), grab('community.json', null),
+    grab('lake_level.json', null)
   ]);
-  DB = { birds: b || [], seasons: s, config: c, community: com };
+  DB = { birds: b || [], seasons: s, config: c, community: com, lake: lake };
   if (!DB.seasons || !DB.config) {
     $('view').innerHTML = '<p class="empty">Data could not load and nothing is cached yet.' +
       '<br>Open this once with a connection, then it works offline.</p>';
@@ -76,6 +79,136 @@ function drive(p) {
   return { txt: String(d.min), sub: 'min', mins: d.min };
 }
 
+/* ---------------------------------------------------------- legal light ---- */
+/* UDWR publishes shooting hours from "official" sunrise and sunset at Salt Lake
+   City, then shifts them a few minutes by county. This computes the Salt Lake
+   City figure with SunCalc and rounds toward the safe side: start rounds up,
+   end rounds down. It is an estimate - the guidebook table is the legal one. */
+const SLC = { lat: 40.7608, lon: -111.8910 };
+const clock = d => d.toLocaleTimeString('en-US', { timeZone: 'America/Denver', hour: 'numeric', minute: '2-digit' });
+function legalLight(day) {
+  if (!SUN) return null;
+  const noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
+  const t = SUN.getTimes(noon, SLC.lat, SLC.lon);
+  if (!t || !t.sunrise || isNaN(t.sunrise) || isNaN(t.sunset)) return null;
+  const up = ms => new Date(Math.ceil(ms / 60000) * 60000);
+  const dn = ms => new Date(Math.floor(ms / 60000) * 60000);
+  const H = 30 * 60000;
+  return {
+    start: up(t.sunrise.getTime() - H),
+    sunrise: up(t.sunrise.getTime()),
+    sunset: dn(t.sunset.getTime()),
+    late: dn(t.sunset.getTime() + H)
+  };
+}
+function cardLight() {
+  const L = legalLight(today());
+  if (!L) return '';
+  return `<div class="sec-title">Legal light today &middot; estimate</div><div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">Start (all)</div><div class="v">${clock(L.start)}</div></div>
+      <div class="stat"><div class="k">Waterfowl ends</div><div class="v">${clock(L.sunset)}</div></div>
+      <div class="stat"><div class="k">Upland, big game</div><div class="v">${clock(L.late)}</div></div>
+    </div>
+    <p class="fine">Start is 30 minutes before sunrise. Waterfowl ends at sunset; upland, turkey and big game
+    end 30 minutes after. On WMAs, state land beside the Great Salt Lake and federal refuges, everything ends at
+    sunset. Computed for Salt Lake City and rounded to the safe side. The guidebook table shifts a few minutes by
+    county and is the legal one.</p></div>`;
+}
+
+/* ------------------------------------------------------------ lake level ---- */
+function cardLake() {
+  const k = DB.lake;
+  if (!k || !k.sites || !k.sites.length) return '';
+  const s = k.sites.find(x => x.site === '10010000') || k.sites[0];
+  const ref = k.reference || {};
+  const ch = s.change_30d_ft;
+  const over = ref.record_low_ft ? (s.elev_ft - ref.record_low_ft) : null;
+  return `<div class="sec-title">Great Salt Lake level</div><div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">South arm</div><div class="v">${s.elev_ft.toFixed(1)} ft</div></div>
+      <div class="stat"><div class="k">30-day change</div><div class="v">${ch > 0 ? '+' : ''}${ch.toFixed(2)} ft</div></div>
+      ${over != null ? `<div class="stat"><div class="k">Above record low</div><div class="v">${over.toFixed(1)} ft</div></div>` : ''}
+    </div>
+    <p class="fine">USGS gauge at Saltair, read ${esc(fmt(new Date(s.at)))}. ${ref.record_low_ft ? `Record low ${ref.record_low_ft} ft (${esc(ref.record_low_when || '')}). ` : ''}${esc(ref.note || '')}
+    A low lake means dry outer marsh units and longer walks to water; call the WMA before a long drive.</p></div>`;
+}
+
+/* -------------------------------------------------------------- where am I -- */
+function inRing(x, y, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function unitsAt(lon, lat) {
+  return (UNITS || []).filter(u =>
+    lon >= u.bb[0] && lon <= u.bb[2] && lat >= u.bb[1] && lat <= u.bb[3] &&
+    u.p.some(poly => inRing(lon, lat, poly[0]) && !poly.slice(1).some(h => inRing(lon, lat, h))));
+}
+function miles(aLat, aLon, bLat, bLon) {
+  const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLon = (bLon - aLon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLon / 2) ** 2;
+  return 3958.8 * 2 * Math.asin(Math.sqrt(h));
+}
+async function whereAmI() {
+  openSheet('<h3>Where am I</h3><p class="where">Getting a GPS fix. This works with no cell signal.</p>');
+  if (!navigator.geolocation) { openSheet('<h3>Where am I</h3><p class="where">This phone is not sharing location with the app.</p>'); return; }
+  if (!UNITS) {
+    try {
+      const r = await fetch('data/units_geo.json');
+      const j = await r.json();
+      UNITS = j && j.units ? j.units : null;
+    } catch (e) { UNITS = null; }
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    const hits = UNITS ? unitsAt(lon, lat) : null;
+    const near = DB.birds.map(p => ({ p, mi: miles(lat, lon, p.lat, p.lon) })).sort((a, b) => a.mi - b.mi).slice(0, 4);
+    openSheet(`<h3>Where am I</h3>
+      <p class="where mono">${lat.toFixed(5)}, ${lon.toFixed(5)} &middot; within ${Math.round(pos.coords.accuracy)} m</p>
+      <div class="acts"><button class="btn ghost" data-copy="${lat.toFixed(5)}, ${lon.toFixed(5)}">Copy coordinates</button></div>
+      <dl class="f"><dt>Big game hunt boundaries here</dt><dd>${
+        hits == null ? 'Unit shapes are not on this phone yet. Open the app once with a signal.'
+        : hits.length ? hits.map(u => esc(u.n)).join('<br>')
+        : 'None found. You may be outside Utah or on a unit edge.'}</dd>
+      <dt>Closest access points</dt><dd>${near.map(x => `${esc(x.p.name)} &middot; ${x.mi.toFixed(1)} mi`).join('<br>')}</dd></dl>
+      <div class="warnbox" style="margin:14px 16px 0">Boundaries are simplified to about 200 m, and one spot can sit inside
+      several overlapping hunts. Near an edge, trust the Utah Hunt Planner and your permit, not this.</div>`);
+  }, err => {
+    openSheet(`<h3>Where am I</h3><p class="where">No GPS fix: ${esc(err.message || 'location was refused')}.
+      Allow location for this app in the phone settings and try again.</p>`);
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+}
+
+/* ------------------------------------------------------------- forecast ---- */
+/* National Weather Service - public domain, no key. Needs a signal; the rest of
+   the sheet does not wait for it. */
+async function loadWx(lat, lon) {
+  const box = $('wx');
+  if (!box) return;
+  if (!navigator.onLine) { box.innerHTML = '<dt>Forecast</dt><dd>Needs a signal.</dd>'; return; }
+  try {
+    const key = 'ha.wx.' + lat.toFixed(2) + ',' + lon.toFixed(2);
+    let url = null;
+    try { url = localStorage.getItem(key); } catch (e) { /* private mode */ }
+    if (!url) {
+      const pt = await (await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`)).json();
+      url = pt.properties.forecast;
+      try { localStorage.setItem(key, url); } catch (e) { /* private mode */ }
+    }
+    const fc = await (await fetch(url)).json();
+    const rows = fc.properties.periods.slice(0, 4).map(p =>
+      `<b>${esc(p.name)}</b>: ${esc(p.temperature)}&deg;${esc(p.temperatureUnit)}, wind ${esc(p.windSpeed)} ${esc(p.windDirection)}. ${esc(p.shortForecast)}`);
+    if (!$('wx')) return;
+    $('wx').innerHTML = `<dt>Forecast &middot; National Weather Service</dt><dd>${rows.join('<br>')}</dd>`;
+  } catch (e) {
+    if ($('wx')) $('wx').innerHTML = '<dt>Forecast</dt><dd>Could not reach the National Weather Service.</dd>';
+  }
+}
+
 /* ---------------------------------------------------------------- views --- */
 function vToday() {
   const up = upcoming(), on = openNow();
@@ -88,6 +221,8 @@ function vToday() {
       <div class="big">${n === 0 ? 'Today' : n + ' day' + (n === 1 ? '' : 's')}</div>
       <div class="sub">${esc(next.d.title)} &middot; ${fmt(d0(next.d.date))}</div></div>`;
   }
+  h += `<div class="acts" style="padding:12px 0 0"><button class="btn ghost" data-where="1">Where am I &middot; hunt unit from GPS</button></div>`;
+  h += cardLight();
   h += `<div class="sec-title">Open right now</div><div class="card">`;
   h += on.length ? on.map(x => `<button class="row" data-season="${esc(x.s.id)}" style="--g:${GC[x.s.group] || 'var(--accent)'}">
       <span class="pill"></span>
@@ -101,6 +236,7 @@ function vToday() {
   h += near.map(p => rowPoint(p)).join('') || '<p class="empty">No access data.</p>';
   h += `</div>`;
 
+  h += cardLake();
   h += `<div class="sec-title">What is coming</div><div class="card">`;
   h += up.slice(0, 6).map(x => `<button class="row" data-dl="${esc(x.d.id)}" style="--g:var(--accent)">
       <span class="pill"></span>
@@ -266,6 +402,7 @@ function sheetPoint(p) {
       ${f('Permits', p.permits)}${f('Managed by', p.agency)}
       ${link ? `<dt>Contact</dt><dd>${link}</dd>` : ''}
       ${f('Notes', p.notes)}
+      <div id="wx" style="display:contents"><dt>Forecast</dt><dd>Loading&hellip;</dd></div>
       <dt>Source</dt><dd>${esc(p.source_url)} &middot; retrieved ${esc(p.source_date)}</dd>
     </dl>`;
 }
@@ -325,12 +462,13 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
-  if (t.dataset.pt) { const p = DB.birds.find(x => x.id === t.dataset.pt); if (p) openSheet(sheetPoint(p)); return; }
+  if (t.dataset.where) { whereAmI(); return; }
+  if (t.dataset.pt) { const p = DB.birds.find(x => x.id === t.dataset.pt); if (p) { openSheet(sheetPoint(p)); loadWx(p.lat, p.lon); } return; }
   if (t.dataset.season) { const s = DB.seasons.seasons.find(x => x.id === t.dataset.season); if (s) openSheet(sheetSeason(s)); return; }
   if (t.dataset.dl) { const d = DB.seasons.deadlines.find(x => x.id === t.dataset.dl); if (d) openSheet(sheetDeadline(d)); return; }
   if (t.dataset.permit) {
@@ -370,7 +508,11 @@ function net() { $('offline').hidden = navigator.onLine; }
 window.addEventListener('online', net);
 window.addEventListener('offline', net);
 
-load().then(ok => { if (ok) { render(); net(); } });
+load().then(ok => {
+  if (!ok) return;
+  render(); net();
+  import('./vendor/suncalc.js').then(m => { SUN = m; if (tab === 'today') render(); }).catch(() => { /* no legal-light card */ });
+});
 /* Register the worker, and when a new one takes over, reload once so the
    running page picks up the new shell instead of showing the old one until
    the app is force-quit. */
