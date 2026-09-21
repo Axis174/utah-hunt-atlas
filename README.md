@@ -17,7 +17,7 @@ Not affiliated with UDWR. Always confirm against the current guidebook and the
 ## Brand
 
 Pulled from the 2016 RangerHawk site (`~/Documents/Hunt-2026/rangerhawk-2016/`):
-white RANGER**HAWK** wordmark with the hawk over the R, brand blue `#1D95CA`,
+white RANGER**HAWK** wordmark with the hawk over the R (redrawn as vector 2026-09-21; files and notes in `~/Documents/Hunt-2026/brand/`), brand blue `#1D95CA`,
 orange `#E98728`, charcoal `#2C2C2C`; the old site set type in Lato. The only
 logo file that survives is a 271 x 50 pixel PNG (its own filename calls it a
 placeholder). It is sharp enough for a phone header and was enlarged for the app
@@ -278,9 +278,11 @@ MapLibre shades the hills from the same tiles.
   two blocks: Wasatch-Uintas-Box Elder (-113.2,39.7 to -109.9,42.05) and
   Boulder-Fishlake (-112.4,37.6 to -110.8,39.0).
 
-- `docs/maps/terrain-boulder.pmtiles` (19 MB) - zoom 12, about 15 m per pixel,
-  for Boulder Mountain, the Aquarius Plateau, Thousand Lake Mountain and Torrey
-  (-112.0,37.8 to -111.0,38.6). Added 2026-09-21.
+- `docs/maps/terrain-sharp.pmtiles` (63 MB) - zoom 12, about 15 m per pixel, for
+  two blocks: Boulder Mountain, the Aquarius Plateau, Thousand Lake Mountain and
+  Torrey (-112.0,37.8 to -111.0,38.6), and the Wasatch-Uintas core from the Salt
+  Lake valley to the High Uintas (-112.2,40.0 to -110.3,41.2). One archive, cut
+  with a two-box `--region` file. Added 2026-09-21.
 
 All three are extracts of [Mapterhorn](https://mapterhorn.com) (terrarium encoding,
 512 px WebP tiles; in the US the source is USGS 3DEP, public domain; Mapterhorn
@@ -293,7 +295,7 @@ Timpanogos 11,654 (11,752), Moab 4,032 (about 4,026); the fallback path returns
 the same heights as its parent.
 
 Contour interval by zoom: 200 ft (index 1,000) at zoom 11, 100 ft (index 500) at
-12-13, 40 ft (index 200) from 14. Labels in feet on index lines. **Outside the Boulder block the 40 ft
+12-13, 40 ft (index 200) from 14. Labels in feet on index lines. **Outside the two sharp blocks the 40 ft
 lines are interpolated from 29-58 m data: good for reading the shape of the country,
 not for judging a cliff band.** Terrain is a separate, optional 100 MB download
 ("Save terrain") and has its own on/off chip.
@@ -304,10 +306,9 @@ not for judging a cliff band.** Terrain is a separate, optional 100 MB download
       --region=detail-blocks.geojson --minzoom=11 --maxzoom=11
 
 Zoom 12 (15 m) is 598 MB statewide, so it is added one hunting block at a time.
-To add another: extract it with `--minzoom=12 --maxzoom=12` and either merge the
-bounding boxes into one region file for a single zoom-12 archive, or teach
-`demSource()` to try more than one archive per zoom. The Wasatch-Uintas block at
-zoom 12 is about 44 MB.
+To add another: add its box to the region file and re-extract the single zoom-12
+archive (GitHub's limit is 100 MB per file; the two blocks now in it come to 63 MB),
+or teach `demSource()` to try more than one archive per zoom.
 
 ### Rebuilding the map file
 

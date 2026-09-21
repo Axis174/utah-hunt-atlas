@@ -11,7 +11,8 @@
 | ../maps/utah.pmtiles | Protomaps daily build 2026-09-20, Utah extract | zoom 0-13 | Map data (c) OpenStreetMap contributors, ODbL. Attribution must stay visible on the map. |
 | ../maps/land.pmtiles | Utah Trust Lands Administration, Land_Ownership feature service, pulled 2026-09-21; cut with tippecanoe | zoom 5-12 | State of Utah open data; credit shown on the map |
 | ../maps/mvum.pmtiles | USDA Forest Service, EDW Motor Vehicle Use Map roads and trails, Utah extent, pulled 2026-09-21; cut with tippecanoe | zoom 7-12 | US Government work, public domain |
-| ../maps/terrain-utah.pmtiles, ../maps/terrain-detail.pmtiles, ../maps/terrain-boulder.pmtiles | Mapterhorn planet build, Utah extracts, pulled 2026-09-21 | zoom 0-10 statewide, zoom 11 for two blocks, zoom 12 for the Boulder block | See https://mapterhorn.com/attribution (US source: USGS 3DEP, public domain). Attribution shown on the map. |
+| ../maps/terrain-utah.pmtiles, ../maps/terrain-detail.pmtiles, ../maps/terrain-sharp.pmtiles | Mapterhorn planet build, Utah extracts, pulled 2026-09-21 | zoom 0-10 statewide, zoom 11 for two blocks, zoom 12 for the Boulder and Wasatch-Uintas blocks | See https://mapterhorn.com/attribution (US source: USGS 3DEP, public domain). Attribution shown on the map. |
 | ../maps/blm.pmtiles | Bureau of Land Management: national GTLF public display service (Utah) and BLM Utah OHV designations, pulled 2026-09-21; cut with tippecanoe | zoom 6-12 | US Government work, public domain |
+| ../icons/rangerhawk-wordmark.svg and app icons | Ranger Hawk logo, vector redraw 2026-09-21; lettering outlines from Lato Black and Lato Light | - | Lato: SIL Open Font License 1.1 (outlines in a logo are permitted). The logo itself belongs to Pete Busch. |
 
 All files were fetched from jsDelivr / protomaps.github.io at the pinned versions above and are unmodified.

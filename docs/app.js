@@ -231,9 +231,10 @@ const MVUM_FILE = 'maps/mvum.pmtiles';      // USFS Motor Vehicle Use Map: legal
 const BLM_FILE = 'maps/blm.pmtiles';        // BLM Utah: designated routes + area-wide travel rules (open / limited / closed)
 /* Elevation (Mapterhorn, terrarium-encoded, 512 px tiles). All of Utah to zoom 10
    (about 58 m per pixel) plus zoom 11 (about 29 m) for the Wasatch-Uintas-Box Elder
-   and Boulder-Fishlake blocks. maplibre-contour turns it into contour lines on the
+   and Boulder-Fishlake blocks, plus zoom 12 (about 15 m) for Boulder Mountain and the
+   Wasatch-Uintas core. maplibre-contour turns it into contour lines on the
    phone; MapLibre shades the hills from the same tiles. */
-const DEM_FILES = ['maps/terrain-utah.pmtiles', 'maps/terrain-detail.pmtiles', 'maps/terrain-boulder.pmtiles'];   // zoom 0-10, 11, 12
+const DEM_FILES = ['maps/terrain-utah.pmtiles', 'maps/terrain-detail.pmtiles', 'maps/terrain-sharp.pmtiles'];   // zoom 0-10, 11, 12
 const DEM_MAXZOOM = 12;
 const MAP_CACHE = 'ranger-hawk-maps';
 const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js', 'vendor/maplibre-contour.js',
@@ -293,7 +294,7 @@ async function allSaved(files) {
   try { const c = await caches.open(MAP_CACHE); for (const f of files) if (!(await c.match(abs(f)))) return false; return true; } catch (e) { return false; }
 }
 const BASE_FILES = [[MVUM_FILE, 'forest roads', 3400000], [BLM_FILE, 'BLM roads', 8000000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]];
-const TERRAIN_FILES = [[DEM_FILES[2], 'Boulder terrain', 19000000], [DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
+const TERRAIN_FILES = [[DEM_FILES[2], 'sharp terrain', 63000000], [DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
 const mapSaved = () => allSaved(BASE_FILES.map(f => f[0]));
 const terrainSaved = () => allSaved(TERRAIN_FILES.map(f => f[0]));
 function vMap() {
@@ -308,7 +309,7 @@ function vMap() {
     </span></div>
     <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
     <button class="btn ghost" id="mapsave" data-mapsave="base" hidden>Save map &middot; 83 MB</button>
-    <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 120 MB</button></div></div>`;
+    <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 163 MB</button></div></div>`;
 }
 async function refreshMapBar(msg) {
   if (!$('mapstate')) return;
@@ -819,7 +820,7 @@ function renderChrome() {
       <span style="position:relative"><svg viewBox="0 0 24 24">${path}</svg>${k === 'remind' && n ? `<span class="badge">${n}</span>` : ''}</span>
       <span>${label}</span></button>`).join('');
   const ttl = { today: 'Today', map: 'Map', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
-  if (tab === 'today') $('title').innerHTML = '<img src="icons/rangerhawk-wordmark.png" alt="Ranger Hawk">'; else $('title').textContent = ttl;
+  if (tab === 'today') $('title').innerHTML = '<img src="icons/rangerhawk-wordmark.svg" alt="Ranger Hawk">'; else $('title').textContent = ttl;
 }
 function render() {
   renderChrome();
