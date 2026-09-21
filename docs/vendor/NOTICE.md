@@ -12,5 +12,6 @@
 | ../maps/land.pmtiles | Utah Trust Lands Administration, Land_Ownership feature service, pulled 2026-09-21; cut with tippecanoe | zoom 5-12 | State of Utah open data; credit shown on the map |
 | ../maps/mvum.pmtiles | USDA Forest Service, EDW Motor Vehicle Use Map roads and trails, Utah extent, pulled 2026-09-21; cut with tippecanoe | zoom 7-12 | US Government work, public domain |
 | ../maps/terrain-utah.pmtiles, ../maps/terrain-detail.pmtiles | Mapterhorn planet build, Utah extracts, pulled 2026-09-21 | zoom 0-10 statewide, zoom 11 for two blocks | See https://mapterhorn.com/attribution (US source: USGS 3DEP, public domain). Attribution shown on the map. |
+| ../maps/blm.pmtiles | Bureau of Land Management: national GTLF public display service (Utah) and BLM Utah OHV designations, pulled 2026-09-21; cut with tippecanoe | zoom 6-12 | US Government work, public domain |
 
 All files were fetched from jsDelivr / protomaps.github.io at the pinned versions above and are unmodified.

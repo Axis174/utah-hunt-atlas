@@ -228,6 +228,7 @@ async function loadWx(lat, lon) {
 const MAP_FILE = 'maps/utah.pmtiles';
 const LAND_FILE = 'maps/land.pmtiles';      // Utah Trust Lands ownership, cut with tippecanoe
 const MVUM_FILE = 'maps/mvum.pmtiles';      // USFS Motor Vehicle Use Map: legal roads and motorized trails
+const BLM_FILE = 'maps/blm.pmtiles';        // BLM Utah: designated routes + area-wide travel rules (open / limited / closed)
 /* Elevation (Mapterhorn, terrarium-encoded, 512 px tiles). All of Utah to zoom 10
    (about 58 m per pixel) plus zoom 11 (about 29 m) for the Wasatch-Uintas-Box Elder
    and Boulder-Fishlake blocks. maplibre-contour turns it into contour lines on the
@@ -252,19 +253,21 @@ const LAND_NOTE = { private: 'Private. Written permission required.', tribal: 'T
   nps: 'National Park. No hunting.', military: 'Military. Closed.', sitla: 'State trust land. Generally open to hunting; check for leases and closures.' };
 let landOn = true, roadsOn = true, veh = 't', keyOn = false, terrainOn = true;
 try { landOn = localStorage.getItem('ha.land') !== '0'; roadsOn = localStorage.getItem('ha.mvum') !== '0'; veh = localStorage.getItem('ha.veh') === 'a' ? 'a' : 't'; terrainOn = localStorage.getItem('ha.terrain') !== '0'; } catch (e) { /* private mode */ }
-const MV = { open: '#1E8E3E', closed: '#C62828', no: '#8C8C8C' };
+const MV = { open: '#1E8E3E', closed: '#C62828', no: '#8C8C8C', ask: '#E08A00' };
 const mmdd = () => { const n = new Date(); return (n.getMonth() + 1) * 100 + n.getDate(); };
 /* Colour a forest road by whether the chosen vehicle may legally be on it today.
    Windows are stored as month*100+day; a window that wraps the new year has
    open > close, so it is "inside" when today is after open OR before close. */
 function mvColor() {
   const T = mmdd(), o = ['get', veh + 'o'], c = ['get', veh + 'c'];
-  return ['case', ['!', ['has', veh + 'o']], MV.no,
+  return ['case', ['==', ['get', 'u'], 1], MV.ask, ['!', ['has', veh + 'o']], MV.no,
     ['<=', o, c], ['case', ['all', ['>=', T, o], ['<=', T, c]], MV.open, MV.closed],
     ['case', ['any', ['>=', T, o], ['<=', T, c]], MV.open, MV.closed]];
 }
 function mvStatus(pr) {
   const o = pr[veh + 'o'], c = pr[veh + 'c'], T = mmdd(), who = veh === 't' ? 'trucks' : 'ATVs';
+  if (pr.u === 1) return { k: 'ask', txt: 'Limited - read the note' };
+  if (pr.nm === 1) return { k: 'no', txt: 'No motor vehicles' };
   if (o == null) return { k: 'no', txt: 'Not open to ' + who };
   const open = o <= c ? (T >= o && T <= c) : (T >= o || T <= c);
   const f = n => String(Math.floor(n / 100)).padStart(2, '0') + '/' + String(n % 100).padStart(2, '0');
@@ -288,7 +291,7 @@ function loadMapLibs() {
 async function allSaved(files) {
   try { const c = await caches.open(MAP_CACHE); for (const f of files) if (!(await c.match(abs(f)))) return false; return true; } catch (e) { return false; }
 }
-const BASE_FILES = [[MVUM_FILE, 'legal roads', 3400000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]];
+const BASE_FILES = [[MVUM_FILE, 'forest roads', 3400000], [BLM_FILE, 'BLM roads', 8000000], [LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]];
 const TERRAIN_FILES = [[DEM_FILES[1], 'terrain detail', 40500000], [DEM_FILES[0], 'terrain', 59800000]];
 const mapSaved = () => allSaved(BASE_FILES.map(f => f[0]));
 const terrainSaved = () => allSaved(TERRAIN_FILES.map(f => f[0]));
@@ -303,7 +306,7 @@ function vMap() {
       <button class="chip" data-keytoggle="1" id="keybtn" aria-pressed="${keyOn}">Key</button>
     </span></div>
     <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
-    <button class="btn ghost" id="mapsave" data-mapsave="base" hidden>Save map &middot; 75 MB</button>
+    <button class="btn ghost" id="mapsave" data-mapsave="base" hidden>Save map &middot; 83 MB</button>
     <button class="btn ghost" id="demsave" data-mapsave="terrain" hidden>Save terrain &middot; 100 MB</button></div></div>`;
 }
 async function refreshMapBar(msg) {
@@ -419,6 +422,16 @@ function huntLayers() {
   const rv = roadsOn ? 'visible' : 'none';
   const w = ['interpolate', ['linear'], ['zoom'], 8, 0.8, 11, 1.8, 14, 3.4];
   out.splice(lb < 0 ? out.length : lb, 0,
+    { id: 'blm-closed', type: 'fill', source: 'blm', 'source-layer': 'areas', layout: { visibility: rv }, filter: ['==', 'd', 'Closed'],
+      paint: { 'fill-color': '#C62828', 'fill-opacity': 0.13 } },
+    { id: 'blm-areas', type: 'fill', source: 'blm', 'source-layer': 'areas', layout: { visibility: rv }, filter: ['!=', 'd', 'Closed'],
+      paint: { 'fill-color': '#000000', 'fill-opacity': 0.01 } },
+    { id: 'blm-casing', type: 'line', source: 'blm', 'source-layer': 'routes', minzoom: 9, layout: { visibility: rv, 'line-cap': 'round' },
+      paint: { 'line-color': '#ffffff', 'line-opacity': 0.8, 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.4, 11, 2.8, 14, 5] } },
+    { id: 'blm-road', type: 'line', source: 'blm', 'source-layer': 'routes', filter: ['==', 'k', 'r'], layout: { visibility: rv, 'line-cap': 'round' },
+      paint: { 'line-color': mvColor(), 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.5, 11, 1.5, 14, 3] } },
+    { id: 'blm-trail', type: 'line', source: 'blm', 'source-layer': 'routes', filter: ['==', 'k', 't'], layout: { visibility: rv },
+      paint: { 'line-color': mvColor(), 'line-width': ['interpolate', ['linear'], ['zoom'], 7, 0.5, 11, 1.5, 14, 3], 'line-dasharray': [2, 1.2] } },
     { id: 'mvum-casing', type: 'line', source: 'mvum', 'source-layer': 'mvum', layout: { visibility: rv, 'line-cap': 'round' },
       paint: { 'line-color': '#ffffff', 'line-opacity': 0.85, 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 1.6, 11, 3.2, 14, 5.6] } },
     { id: 'mvum-road', type: 'line', source: 'mvum', 'source-layer': 'mvum', filter: ['==', 'k', 'r'], layout: { visibility: rv, 'line-cap': 'round' },
@@ -428,16 +441,20 @@ function huntLayers() {
     { id: 'contour-label', type: 'symbol', source: 'contours', 'source-layer': 'contours', minzoom: 12, filter: ['==', ['get', 'level'], 1],
       layout: { visibility: tv, 'symbol-placement': 'line', 'text-field': ['concat', ['number-format', ['get', 'ele'], {}], ' ft'], 'text-font': ['Noto Sans Italic'], 'text-size': 10, 'symbol-spacing': 380 },
       paint: { 'text-color': '#6B4423', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } },
+    { id: 'blm-name', type: 'symbol', source: 'blm', 'source-layer': 'routes', minzoom: 12, filter: ['has', 'n'],
+      layout: { visibility: rv, 'symbol-placement': 'line', 'text-field': ['get', 'n'], 'text-font': ['Noto Sans Medium'], 'text-size': 10, 'symbol-spacing': 420 },
+      paint: { 'text-color': '#1c1c1c', 'text-halo-color': '#fff', 'text-halo-width': 1.6 } },
     { id: 'mvum-num', type: 'symbol', source: 'mvum', 'source-layer': 'mvum', minzoom: 11,
       layout: { visibility: rv, 'symbol-placement': 'line', 'text-field': ['get', 'id'], 'text-font': ['Noto Sans Medium'], 'text-size': 10, 'symbol-spacing': 320 },
       paint: { 'text-color': '#1c1c1c', 'text-halo-color': '#fff', 'text-halo-width': 1.6 } });
   return out;
 }
-const MV_LAYERS = ['mvum-casing', 'mvum-road', 'mvum-trail', 'mvum-num'];
+const MV_LAYERS = ['mvum-casing', 'mvum-road', 'mvum-trail', 'mvum-num', 'blm-closed', 'blm-areas', 'blm-casing', 'blm-road', 'blm-trail', 'blm-name'];
+const ROAD_LINES = ['mvum-road', 'mvum-trail', 'blm-road', 'blm-trail'];
 function drawLegend() {
   const el = $('legend'); if (!el) return;
   const who = veh === 't' ? 'truck' : 'ATV';
-  el.innerHTML = (roadsOn ? `<span><i style="background:${MV.open}"></i>Open today (${who})</span><span><i style="background:${MV.closed}"></i>Closed today</span><span><i style="background:${MV.no}"></i>Not for ${who}s</span><span class="brk"></span>` : '') +
+  el.innerHTML = (roadsOn ? `<span><i style="background:${MV.open}"></i>Open today (${who})</span><span><i style="background:${MV.closed}"></i>Closed today</span><span><i style="background:${MV.no}"></i>Not for ${who}s</span><span><i style="background:${MV.ask}"></i>Limited, tap to read</span><span><i style="background:#C62828;opacity:.3"></i>BLM closed area</span><span class="brk"></span>` : '') +
     (landOn ? LAND.map(l => `<span><i style="background:${l[2]}"></i>${l[1]}</span>`).join('') : '');
   el.hidden = !keyOn || (!roadsOn && !landOn);
   if (MAP) setTimeout(() => MAP && MAP.resize(), 0);
@@ -452,7 +469,7 @@ function toggleRoads() {
 function setVeh(v) {
   veh = v === 'a' ? 'a' : 't';
   try { localStorage.setItem('ha.veh', veh); } catch (e) { /* private mode */ }
-  if (MAP && MAP.getStyle()) ['mvum-road', 'mvum-trail'].forEach(id => MAP.getLayer(id) && MAP.setPaintProperty(id, 'line-color', mvColor()));
+  if (MAP && MAP.getStyle()) ROAD_LINES.forEach(id => MAP.getLayer(id) && MAP.setPaintProperty(id, 'line-color', mvColor()));
   document.querySelectorAll('[data-veh]').forEach(b => b.setAttribute('aria-pressed', b.dataset.veh === veh));
   drawLegend();
 }
@@ -484,6 +501,7 @@ async function initMap() {
         contours: { type: 'vector', maxzoom: 15, tiles: [demSource().contourProtocolUrl({ multiplier: 3.28084, overzoom: 1,
           thresholds: { 11: [200, 1000], 12: [100, 500], 13: [100, 500], 14: [50, 250] },
           elevationKey: 'ele', levelKey: 'level', contourLayer: 'contours' })] },
+        blm: { type: 'vector', url: 'pmtiles://' + abs(BLM_FILE), attribution: 'BLM' },
         mvum: { type: 'vector', url: 'pmtiles://' + abs(MVUM_FILE), attribution: 'Roads: USFS MVUM' }, land: { type: 'vector', url: 'pmtiles://' + abs(LAND_FILE), attribution: 'Land: Utah Trust Lands' }, protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
         attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>' } },
       layers: huntLayers()
@@ -525,17 +543,22 @@ async function initMap() {
       const un = UNITS ? unitsAt(e.lngLat.lng, e.lngLat.lat).map(u => esc(u.n)) : [];
       const lf = landOn ? MAP.queryRenderedFeatures(e.point, { layers: ['land-fill', 'land-private'].filter(id => MAP.getLayer(id)) })[0] : null;
       const lc = lf ? LAND.find(l => l[0] === lf.properties.c) : null;
-      const rd = roadsOn ? MAP.queryRenderedFeatures([[e.point.x - 9, e.point.y - 9], [e.point.x + 9, e.point.y + 9]], { layers: ['mvum-road', 'mvum-trail'].filter(id => MAP.getLayer(id)) })[0] : null;
-      if (!hit && !un.length && !lc && !rd) return;
+      const rd = roadsOn ? MAP.queryRenderedFeatures([[e.point.x - 9, e.point.y - 9], [e.point.x + 9, e.point.y + 9]], { layers: ROAD_LINES.filter(id => MAP.getLayer(id)) })[0] : null;
+      const ar = roadsOn && MAP.getLayer('blm-areas') ? MAP.queryRenderedFeatures(e.point, { layers: ['blm-closed', 'blm-areas'] })[0] : null;
+      if (!hit && !un.length && !lc && !rd && !ar) return;
       let rdHtml = '';
       if (rd) {
-        const q = rd.properties, stt = mvStatus(q);
-        rdHtml = `<b>${q.k === 't' ? 'Trail' : 'Forest Road'} ${esc(q.id || '')}</b>${q.n && q.n !== 'Un-Named' ? ' &middot; ' + esc(q.n) : ''}<br>
-          <span class="own"><i style="background:${MV[stt.k]}"></i><b>${esc(stt.txt)}</b></span><br>
-          <span style="font-size:11.5px">${esc(q.v || '').split(' | ').join('<br>')}${q.sf ? '<br>Surface: ' + esc(q.sf) : ''}${q.ml ? '<br>Maintained for: ' + esc(q.ml) : ''}<br>${esc(q.fo || '')} NF${q.dn ? ', ' + esc(q.dn) + ' district' : ''}</span><hr class="pophr">`;
+        const q = rd.properties, stt = mvStatus(q), blm = q.src === 'blm';
+        const head = blm ? `<b>BLM ${q.k === 't' ? 'trail' : 'route'}${q.n ? ' &middot; ' + esc(q.n) : ''}</b>${q.id ? ' <span class="mono" style="font-size:10.5px">' + esc(q.id) + '</span>' : ''}`
+          : `<b>${q.k === 't' ? 'Trail' : 'Forest Road'} ${esc(q.id || '')}</b>${q.n && q.n !== 'Un-Named' ? ' &middot; ' + esc(q.n) : ''}`;
+        const body = blm ? `${esc(q.why || '')}${q.cl ? '<br>' + esc(q.cl) : ''}${q.sf ? ' &middot; ' + esc(q.sf) + ' surface' : ''}<br><i>BLM lists no seasonal dates here. Wet-weather, fire and wildlife closures are posted on the ground.</i>`
+          : `${esc(q.v || '').split(' | ').join('<br>')}${q.sf ? '<br>Surface: ' + esc(q.sf) : ''}${q.ml ? '<br>Maintained for: ' + esc(q.ml) : ''}<br>${esc(q.fo || '')} NF${q.dn ? ', ' + esc(q.dn) + ' district' : ''}`;
+        rdHtml = `${head}<br><span class="own"><i style="background:${MV[stt.k]}"></i><b>${esc(stt.txt)}</b></span><br><span style="font-size:11.5px">${body}</span><hr class="pophr">`;
       }
-      const pr = hit ? hit.properties : {};
-      const nm = pr.name || pr['UDWR.DWRADMIN.WIA_Properties.Name'] || '';
+      if (ar) {
+        const d = ar.properties.d, rule = { Open: 'Open: cross-country travel allowed', Limited: 'Limited: stay on designated or existing routes', Closed: 'CLOSED to motor vehicles' }[d] || d;
+        rdHtml += `<span style="font-size:11.5px"><b>BLM travel rule here:</b> ${esc(rule)}${ar.properties.a ? ' (' + esc(ar.properties.a) + ')' : ''}${!rd && d === 'Limited' ? '<br><i>No BLM route drawn here. BLM has published routes for southern and eastern Utah but almost none for the West Desert and Box Elder; the area rule still applies.</i>' : ''}</span><hr class="pophr">`;
+      }
       new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(e.lngLat).setHTML(rdHtml +
         (nm ? `<b>${esc(nm)}</b><br>${hit.layer.id === 'wia-fill' ? 'Walk-In Access property' : esc(pr.type_ || 'DWR property')}<br>` : '') +
         (lc ? `<span class="own"><i style="background:${lc[2]}"></i><b>${esc(lc[1])}</b>${lf.properties.name ? ' &middot; ' + esc(lf.properties.name) : ''}</span>${LAND_NOTE[lc[0]] ? `<br><span style="font-size:11.5px">${LAND_NOTE[lc[0]]}</span>` : ''}<br>` : '') +

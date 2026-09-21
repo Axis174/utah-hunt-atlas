@@ -185,6 +185,7 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
 | [maplibre-contour](https://github.com/onthegomap/maplibre-contour) 0.1.1, vendored | Draws contour lines on the phone from elevation tiles | BSD-3-Clause |
 | [Mapterhorn](https://mapterhorn.com) elevation tiles (USGS 3DEP in the US) | Contours and hill shading | open; attribution shown on the map |
+| BLM [Ground Transportation Linear Features](https://gis.blm.gov/arcgis/rest/services/transportation/BLM_Natl_GTLF_Public_Display/MapServer) and BLM Utah OHV designations | BLM roads, trails and area travel rules | public domain |
 | [USFS Motor Vehicle Use Map](https://www.fs.usda.gov/visit/maps/mvum) data | Which forest roads are legally open, to what, and when | public domain |
 | [tippecanoe](https://github.com/felt/tippecanoe) 2.x (build tool, not shipped) | Cuts the land ownership layer into an offline map file | BSD-2-Clause |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
@@ -236,6 +237,33 @@ winter windows that wrap the new year (tested).
 emergency and fire closures separately and those are not in here. A road missing
 from the MVUM is closed to motor vehicles even if it exists on the ground. BLM
 and state roads are not covered - this is National Forest land only.
+
+### BLM routes and travel rules
+
+`docs/maps/blm.pmtiles` (8 MB) holds two BLM layers, pulled 2026-09-21, public
+domain:
+
+- **Routes** - 40,668 Utah segments from BLM's national Ground Transportation
+  Linear Features service (`gis.blm.gov/.../BLM_Natl_GTLF_Public_Display`): 38,881
+  roads open to public motor vehicles, 927 limited roads and trails, and 860
+  non-motorized or unassessed trails. They share the Forest Service colour logic:
+  green open, grey not for this vehicle, red seasonally closed, plus **amber for
+  "limited" routes where BLM gives no readable detail** (about 1,200). Limited
+  routes were read into plain classes: width limits of 50-66 inches (ATV / UTV yes,
+  truck no), motorcycle single-track, ranch / admin / permit only (not public),
+  and one seasonal window.
+- **Area rules** - 6,058 polygons from BLM Utah's OHV designations: Open
+  (cross-country allowed), Limited (designated or existing routes only), Closed.
+  Closed areas tint red; a tap anywhere on BLM ground gives the rule.
+
+**Coverage is uneven, and this matters.** BLM has published routes for southern
+and eastern Utah - thousands per degree square around Moab, Price, Richfield,
+Kanab, Monticello and Vernal - but almost none for the West Desert, Tooele and
+Box Elder (the Salt Lake Field Office). There the map shows the area rule only and
+says so. Unlike the Forest Service map, **a BLM road missing here is not thereby
+closed**: in a "Limited to existing routes" area an existing road is legal. BLM
+lists no seasonal dates in this data; wet-weather, fire and wildlife closures are
+posted on the ground.
 
 ### Terrain: contour lines and hill shading
 
