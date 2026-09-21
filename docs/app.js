@@ -1,4 +1,4 @@
-/* Utah Hunt Atlas - offline-first personal hunting reference. */
+/* Ranger Hawk - offline-first personal hunting reference. */
 'use strict';
 
 const $ = id => document.getElementById(id);

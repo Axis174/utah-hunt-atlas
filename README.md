@@ -1,4 +1,6 @@
-# Utah Hunt Atlas
+# Ranger Hawk
+
+_Formerly "Utah Hunt Atlas". The repo and URL keep the old slug for now; the name goes back to RangerHawk, a hunting and fishing community site first built in 2016._
 
 A personal, installable phone app plus a daily data refresh for Utah hunting —
 birds (pheasant, chukar, duck, ptarmigan) and big game (deer and elk, archery

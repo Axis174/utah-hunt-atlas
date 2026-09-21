@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Move Utah Hunt Atlas from the Axis174 business account to a personal one.
+# Move Ranger Hawk (repo: utah-hunt-atlas) from the Axis174 business account to a personal one.
 #
 #   ./move-to-personal.sh <personal-github-username>
 #

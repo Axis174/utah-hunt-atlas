@@ -43,9 +43,9 @@ def fold(line):
 
 
 L = ["BEGIN:VCALENDAR", "VERSION:2.0",
-     "PRODID:-//utah-hunt-atlas//Pete Busch//EN",
+     "PRODID:-//ranger-hawk//Pete Busch//EN",
      "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-     "X-WR-CALNAME:Utah Hunt Atlas",
+     "X-WR-CALNAME:Ranger Hawk",
      "X-WR-CALDESC:Seasons, permit deadlines and access contacts for Utah hunting",
      "X-PUBLISHED-TTL:PT12H", "REFRESH-INTERVAL;VALUE=DURATION:PT12H"]
 

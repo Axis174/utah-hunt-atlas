@@ -14,7 +14,7 @@ import sources as S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "docs", "data")
-UA = {"User-Agent": "utah-hunt-atlas/1.0 (personal hunting reference; contact via repo)"}
+UA = {"User-Agent": "ranger-hawk/1.0 (personal hunting reference; contact via repo)"}
 os.makedirs(DATA, exist_ok=True)
 
 report = {"run": datetime.now(timezone.utc).isoformat(timespec="seconds"),
