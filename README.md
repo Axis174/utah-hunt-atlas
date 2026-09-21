@@ -14,6 +14,17 @@ Not affiliated with UDWR. Always confirm against the current guidebook and the
 
 ---
 
+## Brand
+
+Pulled from the 2016 RangerHawk site (`~/Documents/Hunt-2026/rangerhawk-2016/`):
+white RANGER**HAWK** wordmark with the hawk over the R, brand blue `#1D95CA`,
+orange `#E98728`, charcoal `#2C2C2C`; the old site set type in Lato. The only
+logo file that survives is a 271 x 50 pixel PNG (its own filename calls it a
+placeholder). It is sharp enough for a phone header and was enlarged for the app
+icon, where the edges are slightly soft. A redrawn vector logo is the fix.
+Links and buttons use a darker blue, `#15709A`, because the brand blue is too
+light to read as small text on white.
+
 ## Moving this to another GitHub account
 
 `./move-to-personal.sh <username>` creates the repo under that account, pushes,
@@ -172,9 +183,29 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | [PMTiles](https://github.com/protomaps/PMTiles) 4.5.0, vendored | Reads one map file by byte range, no tile server | BSD-3-Clause |
 | [Protomaps basemaps](https://github.com/protomaps/basemaps) 5.7.2 + fonts and icons, vendored | Map style; data extract `docs/maps/utah.pmtiles` | BSD-3-Clause code; map data (c) OpenStreetMap, ODbL - attribution is shown on the map and must stay |
 | [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
+| [tippecanoe](https://github.com/felt/tippecanoe) 2.x (build tool, not shipped) | Cuts the land ownership layer into an offline map file | BSD-2-Clause |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
 | [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
 | [National Weather Service API](https://www.weather.gov/documentation/services-web-api) | Forecast per access point | public domain |
+
+### Land ownership layer
+
+`docs/maps/land.pmtiles` (6.5 MB) is all 16,045 parcels of the Utah Trust Lands
+ownership layer - BLM, National Forest, state trust (SITLA), DWR, state parks,
+National Park, refuge, military, tribal and private - cut into an offline vector
+file with [tippecanoe](https://github.com/felt/tippecanoe) (BSD-2). It draws under
+the roads, has a legend and an on/off button, saves offline with the basemap, and
+a tap anywhere names the owner. Source, pulled 2026-09-21:
+`https://gis.trustlands.utah.gov/mapping/rest/services/Land_Ownership/FeatureServer/0`.
+To rebuild: page the layer to GeoJSON, reduce each parcel to a class code, then
+
+    tippecanoe -f -o docs/maps/land.pmtiles -l land -Z5 -z12 \
+      --coalesce-densest-as-needed --detect-shared-borders --simplification=4 land.geojson
+
+**Ownership is a guide, not a survey.** Parcels are simplified, the state updates
+the layer on its own schedule, and public ownership does not by itself mean open
+to hunting or legally reachable. No licence text is published on the service; the
+state's open-data practice is free use with credit, which the map shows.
 
 ### Rebuilding the map file
 
@@ -203,10 +234,6 @@ the legal authority.
 
 ## Worth adding next (checked 2026-09-20, not built)
 
-- **Land ownership** - Utah Trust Lands publishes federal / state / private / tribal
-  ownership as an open ArcGIS layer. The single most useful missing map layer, and
-  the core of what onX sells. Large; needs to be cut into its own PMTiles file
-  with [tippecanoe](https://github.com/felt/tippecanoe).
 - **USFS Motor Vehicle Use Map** - which forest roads are legally open, and when.
   Public domain ArcGIS service (`EDW_MVUM_01`). Same treatment as above.
 - **Contour lines / hillshade** - possible offline with USGS 3DEP elevation and

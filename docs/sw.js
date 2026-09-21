@@ -8,10 +8,10 @@
 
    Data is network-first with a cache fallback: a live refresh wins when there
    is signal, and the last good copy is there when there is none. */
-const VERSION = 'ranger-hawk-v7';
+const VERSION = 'ranger-hawk-v8';
 const SHELL = [
   './', './index.html', './app.js', './styles.css',
-  './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
+  './manifest.webmanifest', './icons/rangerhawk-wordmark.png', './icons/icon-192.png', './icons/icon-512.png',
   './data/bird_access.json', './data/seasons.json', './data/config.json',
   './vendor/suncalc.js', './data/lake_level.json', './data/units_geo.json', './data/snow.json'
 ];
@@ -27,22 +27,22 @@ self.addEventListener('install', e => {
 // The offline map lives in its own cache so an app update never throws away a
 // 65 MB download.
 const MAPS = 'ranger-hawk-maps';
-let mapBlob = null;
+const mapBlobs = {};
 
-// PMTiles reads the map with byte-range requests. Answer them from the saved
-// copy when there is one; otherwise let the network handle it.
+// PMTiles reads the map files with byte-range requests. Answer them from the
+// saved copy when there is one; otherwise let the network handle it.
 async function mapRange(req) {
   const url = req.url.split('?')[0];
-  if (!mapBlob || mapBlob.url !== url) {
+  if (!mapBlobs[url]) {
     const hit = await (await caches.open(MAPS)).match(url);
     if (!hit) return fetch(req);
-    mapBlob = { url, blob: await hit.blob() };
+    mapBlobs[url] = await hit.blob();
   }
-  const size = mapBlob.blob.size;
+  const blob = mapBlobs[url], size = blob.size;
   const m = /bytes=(\d+)-(\d*)/.exec(req.headers.get('range') || '');
-  if (!m) return new Response(mapBlob.blob, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(size), 'Accept-Ranges': 'bytes' } });
+  if (!m) return new Response(blob, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(size), 'Accept-Ranges': 'bytes' } });
   const start = +m[1], end = m[2] ? Math.min(+m[2], size - 1) : size - 1;
-  return new Response(mapBlob.blob.slice(start, end + 1), { status: 206, headers: {
+  return new Response(blob.slice(start, end + 1), { status: 206, headers: {
     'Content-Type': 'application/octet-stream', 'Accept-Ranges': 'bytes',
     'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1) } });
 }

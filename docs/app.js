@@ -226,6 +226,7 @@ async function loadWx(lat, lon) {
    service worker answers the map's byte-range reads from the saved copy, so once
    "Save map for offline" has run, the whole thing works with no signal. */
 const MAP_FILE = 'maps/utah.pmtiles';
+const LAND_FILE = 'maps/land.pmtiles';      // Utah Trust Lands ownership, cut with tippecanoe
 const MAP_CACHE = 'ranger-hawk-maps';
 const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/pmtiles.js', 'vendor/basemaps.js',
   'maps/sprites/light.json', 'maps/sprites/light.png', 'maps/sprites/light@2x.json', 'maps/sprites/light@2x.png',
@@ -234,7 +235,18 @@ const MAP_ASSETS = ['vendor/maplibre-gl.js', 'vendor/maplibre-gl.css', 'vendor/p
     ['0-255', '256-511', '8192-8447'].map(r => 'maps/fonts/' + encodeURIComponent(f) + '/' + r + '.pbf')));
 let MAP = null, mapLibs = null;
 const abs = rel => new URL(rel, location.href).href;
-const SPC = { duck: '#2F6F8F', pheasant: '#A0522D', chukar: '#8A6D1F', ptarmigan: '#5B5F97' };
+/* Ownership colours follow the convention hunters already know from BLM maps. */
+const LAND = [
+  ['blm', 'BLM', '#F2D35B'], ['usfs', 'National Forest', '#7DB86B'], ['sitla', 'State trust (SITLA)', '#5B9BD5'],
+  ['dwr', 'DWR', '#2E8B7A'], ['statepark', 'State park', '#A58BD0'], ['state_other', 'Other state', '#B9C7E4'],
+  ['nps', 'National Park', '#C49A6C'], ['usfws', 'Wildlife refuge', '#6CC5BE'], ['fed_other', 'Other federal', '#D9C9A3'],
+  ['military', 'Military', '#D9766C'], ['tribal', 'Tribal', '#E59B5C'], ['private', 'Private', '#FFFFFF']
+];
+const LAND_NOTE = { private: 'Private. Written permission required.', tribal: 'Tribal land. A state permit does not cover it.',
+  nps: 'National Park. No hunting.', military: 'Military. Closed.', sitla: 'State trust land. Generally open to hunting; check for leases and closures.' };
+let landOn = true;
+try { landOn = localStorage.getItem('ha.land') !== '0'; } catch (e) { /* private mode */ }
+const SPC = { duck: '#1D95CA', pheasant: '#A0522D', chukar: '#8A6D1F', ptarmigan: '#5B5F97' };
 
 function addScript(src) {
   return new Promise((ok, no) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); });
@@ -248,12 +260,14 @@ function loadMapLibs() {
   return mapLibs;
 }
 async function mapSaved() {
-  try { const c = await caches.open(MAP_CACHE); return !!(await c.match(abs(MAP_FILE))); } catch (e) { return false; }
+  try { const c = await caches.open(MAP_CACHE); return !!(await c.match(abs(MAP_FILE))) && !!(await c.match(abs(LAND_FILE))); } catch (e) { return false; }
 }
 function vMap() {
   return `<div class="mapwrap"><div id="map"></div>
+    <div class="legend" id="legend"${landOn ? '' : ' hidden'}>${LAND.map(l => `<span><i style="background:${l[2]}"></i>${l[1]}</span>`).join('')}</div>
     <div class="mapbar"><span id="mapstate">Loading map&hellip;</span>
-    <button class="btn ghost" id="mapsave" data-mapsave="1" hidden>Save map for offline &middot; 65 MB</button></div></div>`;
+    <button class="btn ghost" data-landtoggle="1" id="landbtn">${landOn ? 'Hide land' : 'Show land'}</button>
+    <button class="btn ghost" id="mapsave" data-mapsave="1" hidden>Save offline &middot; 72 MB</button></div></div>`;
 }
 async function refreshMapBar(msg) {
   const st = $('mapstate'), b = $('mapsave');
@@ -269,17 +283,19 @@ async function saveMap() {
   try {
     const c = await caches.open(MAP_CACHE);
     await Promise.allSettled(MAP_ASSETS.map(u => c.add(new Request(u, { cache: 'reload' }))));
-    const r = await fetch(MAP_FILE, { cache: 'reload' });
-    if (!r.ok || !r.body) throw new Error('download failed');
-    const total = +r.headers.get('content-length') || 65452871;
-    const rd = r.body.getReader(); const parts = []; let got = 0;
-    for (;;) {
-      const { done, value } = await rd.read();
-      if (done) break;
-      parts.push(value); got += value.length;
-      if ($('mapstate')) $('mapstate').textContent = 'Saving map: ' + Math.round(got / total * 100) + '%';
+    for (const [file, label, guess] of [[LAND_FILE, 'land ownership', 6500000], [MAP_FILE, 'map', 65452871]]) {
+      const r = await fetch(file, { cache: 'reload' });
+      if (!r.ok || !r.body) throw new Error('download failed');
+      const total = +r.headers.get('content-length') || guess;
+      const rd = r.body.getReader(); const parts = []; let got = 0;
+      for (;;) {
+        const { done, value } = await rd.read();
+        if (done) break;
+        parts.push(value); got += value.length;
+        if ($('mapstate')) $('mapstate').textContent = 'Saving ' + label + ': ' + Math.round(got / total * 100) + '%';
+      }
+      await c.put(abs(file), new Response(new Blob(parts), { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(got) } }));
     }
-    await c.put(abs(MAP_FILE), new Response(new Blob(parts), { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(got) } }));
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
     refreshMapBar();
   } catch (e) {
@@ -306,7 +322,25 @@ function huntLayers() {
     if (l.id === 'roads_labels_minor') l.minzoom = 13;
     out.push(l);
   }
+  // Ownership goes under the roads and labels so they stay readable on top of it.
+  const at = out.findIndex(l => /^roads_/.test(l.id));
+  const vis = landOn ? 'visible' : 'none';
+  out.splice(at < 0 ? out.length : at, 0,
+    { id: 'land-fill', type: 'fill', source: 'land', 'source-layer': 'land', layout: { visibility: vis },
+      filter: ['!=', 'c', 'private'],
+      paint: { 'fill-opacity': 0.42, 'fill-color': ['match', ['get', 'c']].concat(LAND.flatMap(l => [l[0], l[2]]), ['#cccccc']) } },
+    { id: 'land-private', type: 'fill', source: 'land', 'source-layer': 'land', layout: { visibility: vis },
+      filter: ['==', 'c', 'private'], paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.55 } },
+    { id: 'land-line', type: 'line', source: 'land', 'source-layer': 'land', minzoom: 9, layout: { visibility: vis },
+      paint: { 'line-color': '#5a5a4a', 'line-opacity': 0.45, 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.3, 13, 1] } });
   return out;
+}
+function toggleLand() {
+  landOn = !landOn;
+  try { localStorage.setItem('ha.land', landOn ? '1' : '0'); } catch (e) { /* private mode */ }
+  if (MAP && MAP.getStyle()) ['land-fill', 'land-private', 'land-line'].forEach(id => MAP.getLayer(id) && MAP.setLayoutProperty(id, 'visibility', landOn ? 'visible' : 'none'));
+  if ($('legend')) $('legend').hidden = !landOn;
+  if ($('landbtn')) $('landbtn').textContent = landOn ? 'Hide land' : 'Show land';
 }
 async function initMap() {
   if (!$('map')) return;
@@ -323,7 +357,7 @@ async function initMap() {
       version: 8,
       glyphs: abs('maps/fonts/') + '{fontstack}/{range}.pbf',
       sprite: abs('maps/sprites/light'),
-      sources: { protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
+      sources: { land: { type: 'vector', url: 'pmtiles://' + abs(LAND_FILE), attribution: 'Land: Utah Trust Lands' }, protomaps: { type: 'vector', url: 'pmtiles://' + abs(MAP_FILE),
         attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>' } },
       layers: huntLayers()
     }
@@ -362,11 +396,14 @@ async function initMap() {
       if (MAP.queryRenderedFeatures(e.point, { layers: ['pts'] }).length) return;
       const hit = MAP.queryRenderedFeatures(e.point, { layers: ['dwr-fill', 'wia-fill'].filter(id => MAP.getLayer(id)) })[0];
       const un = UNITS ? unitsAt(e.lngLat.lng, e.lngLat.lat).map(u => esc(u.n)) : [];
-      if (!hit && !un.length) return;
+      const lf = landOn ? MAP.queryRenderedFeatures(e.point, { layers: ['land-fill', 'land-private'].filter(id => MAP.getLayer(id)) })[0] : null;
+      const lc = lf ? LAND.find(l => l[0] === lf.properties.c) : null;
+      if (!hit && !un.length && !lc) return;
       const pr = hit ? hit.properties : {};
       const nm = pr.name || pr['UDWR.DWRADMIN.WIA_Properties.Name'] || '';
       new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat).setHTML(
         (nm ? `<b>${esc(nm)}</b><br>${hit.layer.id === 'wia-fill' ? 'Walk-In Access property' : esc(pr.type_ || 'DWR property')}<br>` : '') +
+        (lc ? `<span class="own"><i style="background:${lc[2]}"></i><b>${esc(lc[1])}</b>${lf.properties.name ? ' &middot; ' + esc(lf.properties.name) : ''}</span>${LAND_NOTE[lc[0]] ? `<br><span style="font-size:11.5px">${LAND_NOTE[lc[0]]}</span>` : ''}<br>` : '') +
         (un.length ? `<span class="mono" style="font-size:11px">Hunt units: ${un.join(' &middot; ')}</span>` : '')).addTo(MAP);
     });
     MAP.on('mouseenter', 'pts', () => { MAP.getCanvas().style.cursor = 'pointer'; });
@@ -616,7 +653,8 @@ function renderChrome() {
     `<button data-tab="${k}"${tab === k ? ' aria-current="page"' : ''}>
       <span style="position:relative"><svg viewBox="0 0 24 24">${path}</svg>${k === 'remind' && n ? `<span class="badge">${n}</span>` : ''}</span>
       <span>${label}</span></button>`).join('');
-  $('title').textContent = { today: 'Today', map: 'Map', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
+  const ttl = { today: 'Today', map: 'Map', access: 'Access', seasons: 'Seasons', remind: 'Reminders', contacts: 'Contacts' }[tab];
+  if (tab === 'today') $('title').innerHTML = '<img src="icons/rangerhawk-wordmark.png" alt="Ranger Hawk">'; else $('title').textContent = ttl;
 }
 function render() {
   renderChrome();
@@ -634,13 +672,14 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
   if (t.dataset.where) { whereAmI(); return; }
   if (t.dataset.mapsave) { saveMap(); return; }
+  if (t.dataset.landtoggle) { toggleLand(); return; }
   if (t.dataset.pt) { const p = DB.birds.find(x => x.id === t.dataset.pt); if (p) { openSheet(sheetPoint(p)); loadWx(p.lat, p.lon); } return; }
   if (t.dataset.season) { const s = DB.seasons.seasons.find(x => x.id === t.dataset.season); if (s) openSheet(sheetSeason(s)); return; }
   if (t.dataset.dl) { const d = DB.seasons.deadlines.find(x => x.id === t.dataset.dl); if (d) openSheet(sheetDeadline(d)); return; }
