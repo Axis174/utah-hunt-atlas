@@ -183,6 +183,7 @@ Checked 2026-09-20 against what is current and maintained on GitHub.
 | [PMTiles](https://github.com/protomaps/PMTiles) 4.5.0, vendored | Reads one map file by byte range, no tile server | BSD-3-Clause |
 | [Protomaps basemaps](https://github.com/protomaps/basemaps) 5.7.2 + fonts and icons, vendored | Map style; data extract `docs/maps/utah.pmtiles` | BSD-3-Clause code; map data (c) OpenStreetMap, ODbL - attribution is shown on the map and must stay |
 | [USDA NRCS SNOTEL](https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html) | Snow depth at four high-country gauges | public domain |
+| [USFS Motor Vehicle Use Map](https://www.fs.usda.gov/visit/maps/mvum) data | Which forest roads are legally open, to what, and when | public domain |
 | [tippecanoe](https://github.com/felt/tippecanoe) 2.x (build tool, not shipped) | Cuts the land ownership layer into an offline map file | BSD-2-Clause |
 | Ray-casting point-in-polygon (a dozen lines, inlined) | Which hunt unit am I in | public technique |
 | [USGS Water Services](https://waterservices.usgs.gov/) | Great Salt Lake elevation, sites 10010000 and 10010100, parameter 62614 | public domain |
@@ -206,6 +207,33 @@ To rebuild: page the layer to GeoJSON, reduce each parcel to a class code, then
 the layer on its own schedule, and public ownership does not by itself mean open
 to hunting or legally reachable. No licence text is published on the service; the
 state's open-data practice is free use with credit, which the map shows.
+
+### Legal forest roads (USFS Motor Vehicle Use Map)
+
+`docs/maps/mvum.pmtiles` (3.4 MB) holds every road and motorized trail the Forest
+Service designates as open in Utah's forests - 8,287 road segments and 1,629
+trails across Uinta-Wasatch-Cache, Ashley, Fishlake, Manti-La Sal and Dixie, plus
+the slivers of Sawtooth, Caribou-Targhee and Humboldt-Toiyabe inside the state.
+Public domain. Pulled 2026-09-21 from
+`https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MVUM_01/MapServer` (layer 1
+roads, layer 2 trails, Utah bounding box).
+
+Each segment carries a legal open window per vehicle class. The build keeps two:
+**truck** (high clearance, else 4WD, else passenger car) and **ATV** (ATV, else
+other wheeled OHV), stored as month*100+day so the map can colour a road **green
+if that vehicle may be on it today, red if it is seasonally closed today, grey if
+that vehicle is never allowed**. Trails draw dashed. Road numbers label from zoom
+11. Tap a road for its number, name, every vehicle class and its dates, surface
+and maintenance level. A Truck / ATV switch recolours the map. Date logic handles
+winter windows that wrap the new year (tested).
+
+    tippecanoe -f -o docs/maps/mvum.pmtiles -l mvum -Z7 -z12 \
+      --drop-densest-as-needed --simplification=3 mvum.geojson
+
+**The MVUM is the legal document; this is a copy of its data.** Forests publish
+emergency and fire closures separately and those are not in here. A road missing
+from the MVUM is closed to motor vehicles even if it exists on the ground. BLM
+and state roads are not covered - this is National Forest land only.
 
 ### Rebuilding the map file
 
@@ -234,8 +262,6 @@ the legal authority.
 
 ## Worth adding next (checked 2026-09-20, not built)
 
-- **USFS Motor Vehicle Use Map** - which forest roads are legally open, and when.
-  Public domain ArcGIS service (`EDW_MVUM_01`). Same treatment as above.
 - **Contour lines / hillshade** - possible offline with USGS 3DEP elevation and
   [maplibre-contour](https://github.com/onthegomap/maplibre-contour). A build of its own.
 - **UDOT mountain pass status** (Mirror Lake Highway closure) - free, but needs a

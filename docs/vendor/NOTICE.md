@@ -9,5 +9,6 @@
 | ../maps/fonts, ../maps/sprites | https://github.com/protomaps/basemaps-assets | v4 sprites; Noto Sans | SIL Open Font License (fonts); BSD-3-Clause (sprites) |
 | ../maps/utah.pmtiles | Protomaps daily build 2026-09-20, Utah extract | zoom 0-13 | Map data (c) OpenStreetMap contributors, ODbL. Attribution must stay visible on the map. |
 | ../maps/land.pmtiles | Utah Trust Lands Administration, Land_Ownership feature service, pulled 2026-09-21; cut with tippecanoe | zoom 5-12 | State of Utah open data; credit shown on the map |
+| ../maps/mvum.pmtiles | USDA Forest Service, EDW Motor Vehicle Use Map roads and trails, Utah extent, pulled 2026-09-21; cut with tippecanoe | zoom 7-12 | US Government work, public domain |
 
 All files were fetched from jsDelivr / protomaps.github.io at the pinned versions above and are unmodified.
