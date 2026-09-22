@@ -9,6 +9,12 @@
    "units": [
     "Box Elder (general deer)",
     "Wasatch Front Extended Archery Area"
+   ],
+   "aliases": [
+    "home",
+    "north salt lake",
+    "nsl",
+    "salt lake"
    ]
   },
   {
@@ -21,6 +27,13 @@
     "Wasatch Mtns",
     "Wasatch Mtns, East",
     "Wasatch Mtns/Central Mtns"
+   ],
+   "aliases": [
+    "cabin",
+    "treetop",
+    "tree top",
+    "timber lakes",
+    "heber"
    ]
   },
   {
@@ -33,6 +46,12 @@
     "Thousand Lakes",
     "Fishlake/Thousand Lakes",
     "Plateau"
+   ],
+   "aliases": [
+    "torrey",
+    "boulder",
+    "the boulders",
+    "fishlake"
    ]
   }
  ],

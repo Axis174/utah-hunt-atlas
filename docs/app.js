@@ -590,7 +590,8 @@ function vToday() {
       <div class="big">${n === 0 ? 'Today' : n + ' day' + (n === 1 ? '' : 's')}</div>
       <div class="sub">${esc(next.d.title)} &middot; ${fmt(d0(next.d.date))}</div></div>`;
   }
-  h += `<div class="acts" style="padding:12px 0 0"><button class="btn ghost" data-where="1">Where am I &middot; hunt unit from GPS</button></div>`;
+  h += `<div class="acts" style="padding:12px 0 0"><button class="btn ghost" data-where="1">Where am I &middot; hunt unit from GPS</button><button class="btn ghost" data-gofind="1">Find a hunt</button></div>`;
+  h += (typeof cardTrip === 'function' ? cardTrip() : '');
   h += cardLight();
   h += `<div class="sec-title">Open right now</div><div class="card">`;
   h += on.length ? on.map(x => `<button class="row" data-season="${esc(x.s.id)}" style="--g:${GC[x.s.group] || 'var(--accent)'}">
@@ -735,8 +736,9 @@ function sheetDraw(code) {
 
 function vSeasons() {
   const groups = ['bird', 'deer', 'elk', 'turkey'];
-  let h = `<div class="seg" style="margin-top:14px"><button data-smode="dates" aria-pressed="${seasonsMode === 'dates'}">Season dates</button><button data-smode="draw" aria-pressed="${seasonsMode === 'draw'}">Draw odds</button></div>`;
+  let h = `<div class="seg" style="margin-top:14px"><button data-smode="dates" aria-pressed="${seasonsMode === 'dates'}">Season dates</button><button data-smode="draw" aria-pressed="${seasonsMode === 'draw'}">Draw odds</button><button data-smode="find" aria-pressed="${seasonsMode === 'find'}">Find a hunt</button></div>`;
   if (seasonsMode === 'draw') return h + vDraw();
+  if (seasonsMode === 'find') return h + (typeof vFind === 'function' ? vFind() : '');
   for (const g of groups) {
     const rows = (DB.seasons.seasons || []).filter(s => s.group === g)
       .map(s => ({ s, st: seasonState(s) }))
@@ -926,11 +928,12 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle],[data-smode],[data-dgrp],[data-dsp],[data-dres],[data-dpts],[data-draw]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle],[data-gofind],[data-smode],[data-dgrp],[data-dsp],[data-dres],[data-dpts],[data-draw]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
+  if (t.dataset.gofind) { tab = 'seasons'; seasonsMode = 'find'; render(); window.scrollTo(0, 0); setTimeout(() => { const i = $('findq'); if (i) i.focus(); }, 50); return; }
   if (t.dataset.smode) { seasonsMode = t.dataset.smode; query = ''; render(); return; }
   if (t.dataset.dgrp) { draw.grp = t.dataset.dgrp; query = ''; saveDraw(); render(); return; }
   if (t.dataset.dsp) { draw.sp = t.dataset.dsp; saveDraw(); render(); return; }
