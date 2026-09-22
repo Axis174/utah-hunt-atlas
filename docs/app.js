@@ -12,6 +12,7 @@ const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric
 const GC = { bird: 'var(--bird)', deer: 'var(--deer)', elk: 'var(--elk)', turkey: 'var(--turkey)' };
 
 let DB = { birds: [], seasons: null, config: null, community: null, lake: null, snow: null };
+let LOT = null, lotState = 'UT';
 let SUN = null;          // SunCalc module, loaded after first paint
 let UNITS = null;        // hunt unit shapes, loaded the first time GPS is used
 let home = 'nsl';
@@ -790,6 +791,22 @@ function vReminders() {
   return h;
 }
 
+/* ------------------------------------------------------- landowner tags ---- */
+function vTags() {
+  if (!LOT) { fetch('data/landowner_tags.json').then(r => r.json()).then(j => { LOT = j; if (tab === 'contacts') render(); }).catch(() => { LOT = { states: [] }; }); return '<p class="empty">Loading&hellip;</p>'; }
+  const S = LOT.states || [], s = S.find(x => x.st === lotState) || S[0];
+  if (!s) return '';
+  const badge = { yes: ['Can be sold', 'var(--brand)'], direct: ['Sold direct only', 'var(--warn)'], no: ['Not for sale', 'var(--crit)'], silent: ['Rule is silent', 'var(--muted)'] }[s.sell] || ['', 'var(--muted)'];
+  return `<div class="chipsrow" style="margin-top:12px">${S.map(x => `<button class="chip" data-lot="${x.st}" aria-pressed="${x.st === s.st}">${x.st}</button>`).join('')}</div>
+    <div class="sec-title">${esc(s.name)} &middot; landowner tags</div><div class="card">
+      <div class="stats"><div class="stat" style="grid-column:span 2"><div class="k">Sale to a hunter</div><div class="v" style="font-size:13px;color:${badge[1]}">${badge[0]}</div></div>
+        <div class="stat"><div class="k">Confidence</div><div class="v" style="font-size:12px">${esc(s.confidence)}</div></div></div>
+      <dl class="f"><dt>Program</dt><dd>${esc(s.program)}</dd><dt>Selling</dt><dd>${esc(s.sell_plain)}</dd><dt>Brokers</dt><dd>${esc(s.broker)}</dd>
+        <dt>Prices seen</dt><dd>${esc(s.price)}</dd><dt>Depredation / damage permits</dt><dd>${esc(s.depredation)}</dd><dt>Public access to private land</dt><dd>${esc(s.access)}</dd>
+        <dt>Source</dt><dd>${esc(s.cite)}</dd><dt>Recent changes</dt><dd>${esc(s.changed)}</dd></dl></div>
+    <div class="warnbox" style="margin-top:12px">${esc(LOT.outfitter_note || '')}</div>
+    <p class="fine" style="padding-left:2px">Researched 2026-09-21 from state statutes, rules and agency pages; 'high' means the state's own text was read, 'medium' means a legal-code mirror or consistent reporting. Not legal advice. Rules change every year.</p>`;
+}
 function vContacts() {
   let h = `<div class="sec-title">Calls that are still open questions</div><div class="card">`;
   h += (DB.config.contacts || []).map(c => `<button class="row" data-contact="${esc(c.name)}" style="--g:${c.priority === 'high' ? 'var(--crit)' : 'var(--accent)'}">
@@ -826,6 +843,7 @@ function vContacts() {
       <span class="pill"></span><span><span class="t">${esc(m.name)}</span></span><span class="v">&rsaquo;</span></a>`).join('');
     h += `</div><p class="note" style="padding:12px 2px">${esc(DB.community.policy || '')}</p>`;
   }
+  h += `<div class="sec-title" style="margin-top:26px">Landowner tags, state by state</div>` + vTags();
   return h;
 }
 
@@ -928,11 +946,12 @@ function render() {
 
 /* --------------------------------------------------------------- events --- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle],[data-gofind],[data-smode],[data-dgrp],[data-dsp],[data-dres],[data-dpts],[data-draw]');
+  const t = e.target.closest('[data-tab],[data-home],[data-pt],[data-season],[data-dl],[data-sp],[data-permit],[data-contact],[data-wia],[data-copy],[data-where],[data-mapsave],[data-landtoggle],[data-roadstoggle],[data-veh],[data-keytoggle],[data-terraintoggle],[data-lot],[data-gofind],[data-smode],[data-dgrp],[data-dsp],[data-dres],[data-dpts],[data-draw]');
   if (!t) { if (e.target.id === 'sheet') closeSheet(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; query = ''; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.home) { home = t.dataset.home; try { localStorage.setItem('ha.home', home); } catch (x) {} render(); return; }
   if (t.dataset.sp) { const s = t.dataset.sp; speciesFilter.has(s) ? speciesFilter.delete(s) : speciesFilter.add(s); render(); return; }
+  if (t.dataset.lot) { lotState = t.dataset.lot; render(); return; }
   if (t.dataset.gofind) { tab = 'seasons'; seasonsMode = 'find'; render(); window.scrollTo(0, 0); setTimeout(() => { const i = $('findq'); if (i) i.focus(); }, 50); return; }
   if (t.dataset.smode) { seasonsMode = t.dataset.smode; query = ''; render(); return; }
   if (t.dataset.dgrp) { draw.grp = t.dataset.dgrp; query = ''; saveDraw(); render(); return; }

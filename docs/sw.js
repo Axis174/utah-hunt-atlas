@@ -10,7 +10,7 @@
    is signal, and the last good copy is there when there is none. */
 const VERSION = 'ranger-hawk-v16';
 const SHELL = [
-  './', './index.html', './app.js', './cams.js', './finder.js', './trip.js', './styles.css', './data/cam_rules.json', './data/hunt_units_2026.json',
+  './', './index.html', './app.js', './cams.js', './finder.js', './trip.js', './styles.css', './data/cam_rules.json', './data/hunt_units_2026.json', './data/landowner_tags.json',
   './manifest.webmanifest', './icons/rangerhawk-wordmark.svg', './icons/icon-192.png', './icons/icon-512.png',
   './data/bird_access.json', './data/seasons.json', './data/config.json',
   './vendor/suncalc.js', './data/lake_level.json', './data/units_geo.json', './data/snow.json', './data/draw_odds.json'

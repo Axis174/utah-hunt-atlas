@@ -76,6 +76,29 @@ dots you can tap. Tap anywhere for the property and hunt units at that spot. The
 GPS button follows you with no signal. **Save map for offline** stores the 65 MB
 map on the phone once; after that the map never needs a connection.
 
+**Find a hunt** (Seasons tab, and a button on Today) — type "I want to hunt elk
+by my cabin with a rifle" and get the hunts that exist there this year: the app
+reads species, weapon, place and points from the sentence, finds the hunt
+boundaries under the place with the unit shapes it carries, matches them to
+UDWR's 2026 hunt-type unit lists (`docs/data/hunt_units_2026.json`, from UDWR's
+ArcGIS services) and to the draw results, and asks a question when something is
+missing. Sub-unit hunts are marked as maybes. No signal needed; no AI service -
+a keyword reader, so it says exactly why it answered what it did.
+
+**Trip plan** (Today) — where you are going, back-by time, contact, vehicle,
+party; sent as an ordinary text from the phone; pin the truck; bearing and
+distance back to it; a Search-and-Rescue read-out of the exact spot; a red
+overdue warning with a one-tap "I'm OK" text. Stays on the phone. **It cannot
+alert anyone with no signal** - that needs the server described under
+"Backend", and the plan text tells the contact what to do meanwhile.
+
+**Landowner tags** (Contacts) — a 16-state plain-language guide to landowner
+permit programs and whether a tag may lawfully be sold to a hunter
+(`docs/data/landowner_tags.json`, researched 2026-09-21 from statutes, rules and
+agency pages, with a confidence level per state). Utah note: the vouchers that
+may be sold are Landowner Association vouchers under R657-43; mitigation permits
+under R657-44 are not sellable; CWMU vouchers are designated, not sold.
+
 **Cams** — a trail camera log that lives entirely on the phone (`docs/cams.js`).
 Make a camera site, bring in the photos from its SD card, and the app reads the
 time the camera stamped on each one, keeps a 640 px copy in the browser's own
