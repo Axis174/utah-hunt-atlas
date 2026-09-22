@@ -130,25 +130,31 @@ const fList = a => a.map(esc).join('; ');
 
    [key, label, what it sounds like in a sentence, season ids, access-point species] */
 const F_BIRDS = [
-  ['pheasant', 'Pheasant', /\b(pheasants?|roosters?|ring-?necks?|ring-?necked)\b/, ['pheasant', 'pheasant-youth'], /pheasant/i],
-  ['chukar', 'Chukar and gray partridge', /\b(chukars?|partridges?|huns?)\b/, ['chukar', 'chukar-youth'], /chukar/i],
-  ['quail', 'Quail', /\b(quail|gambels?)\b/, ['quail'], /quail|upland/i],
-  ['grouse', 'Dusky and ruffed grouse', /\b(grouse|dusky|ruffed)\b/, ['dusky-ruffed'], /grouse|upland/i],
-  ['ptarmigan', 'White-tailed ptarmigan', /\bptarmigans?\b/, ['ptarmigan'], /ptarmigan/i],
-  ['duck', 'Duck, coot and snipe', /\b(ducks?|mallards?|teal|wid?geons?|gadwalls?|pintails?|canvasbacks?|mergansers?|coots?|snipe|redheads?|bluebills?|scaup)\b/, { north: ['duck-n', 'scaup-n'], south: ['duck-s', 'scaup-s'] }, /duck/i],
-  ['goose', 'Geese', /\b(goose|geese|honkers?|specklebell(y|ies)|white-?fronted)\b/, ['geese-wf', 'geese-wf2', 'geese-ebe', 'geese-n', 'geese-n2', 'geese-s'], /duck/i],
-  ['swan', 'Tundra swan', /\bswans?\b/, ['swan'], /duck/i],
-  ['turkey', 'Wild turkey', /\b(turkeys?|gobblers?)\b/, ['turkey-fall', 'turkey-general', 'turkey-le'], /turkey/i]
+  // narrow first: "sage grouse" contains "grouse", "jackrabbit" contains "rabbit"
+  ['sage-grouse', 'Greater sage-grouse', /\bsage[\s-]?grouse\b/, ['sage-grouse'], null, 'A drawn hunt in four named areas - Diamond and Blue Mountain, Parker Mtn, Rich County and West Box Elder. Boundary maps are at hunt.utah.gov.'],
+  ['sharptail', 'Sharp-tailed grouse', /\bsharp[\s-]?tail(ed)?s?\b/, ['sharptail-grouse'], null, 'A drawn hunt in Northeast Box Elder and Cache counties, on all or largely private property. Get written permission before you even apply.'],
+  ['ptarmigan', 'White-tailed ptarmigan', /\bptarmigans?\b/, ['ptarmigan'], /ptarmigan/i, null],
+  ['pheasant', 'Pheasant', /\b(pheasants?|roosters?|ring-?necks?|ring-?necked)\b/, ['pheasant', 'pheasant-youth'], /pheasant/i, null],
+  ['chukar', 'Chukar and gray partridge', /\b(chukars?|partridges?|huns?)\b/, ['chukar', 'chukar-youth'], /chukar/i, null],
+  ['quail', 'Quail', /\b(quail|gambels?)\b/, ['quail'], /quail|upland/i, null],
+  ['grouse', 'Dusky and ruffed grouse', /\b(grouse|dusky|ruffed)\b/, ['dusky-ruffed'], /grouse|upland/i, 'Forest grouse are statewide in the timber. The app’s access points are marsh and upland bird properties, so use the Map tab’s land ownership layer to find public timber.'],
+  ['jackrabbit', 'Jackrabbit', /\bjack\s?rabbits?\b/, ['jackrabbit'], null, 'Statewide, year round, and you do not need a licence. Use the Map tab’s land ownership layer to find public ground.'],
+  ['cottontail', 'Cottontail rabbit', /\b(cottontails?|rabbits?|bunn(y|ies))\b/, ['cottontail'], null, 'Statewide on public land. Use the Map tab’s land ownership layer - the 88 access points are bird properties, not rabbit ground.'],
+  ['hare', 'Snowshoe hare', /\b(snowshoes?|hares?)\b/, ['snowshoe-hare'], null, 'High country timber, statewide. Use the Map tab’s land ownership layer to find public ground.'],
+  ['pigeon', 'Band-tailed pigeon', /\b(band[\s-]?tail(ed)?\s*pigeons?|band[\s-]?tails?|pigeons?)\b/, ['band-tailed-pigeon'], null, 'Statewide, but a two-week season in early September. Needs a free permit.'],
+  ['dove', 'Mourning and white-winged dove', /\b(doves?|mourning dove|white-?winged|collared-?doves?)\b/, ['dove'], null, 'Statewide. Doves sit on ag edges, water and gravel roads in the morning; the app’s access points are marsh and upland bird properties rather than dove ground.'],
+  ['crow', 'American crow', /\bcrows?\b/, ['crow', 'crow2'], null, 'Statewide, in two split seasons. Every national wildlife refuge in Utah is closed to crow hunting.'],
+  ['crane', 'Sandhill crane', /\b(sandhills?|cranes?)\b/, ['crane-cache-rich', 'crane-boxelder', 'crane-uintah-early', 'crane-uintah-mid', 'crane-uintah-late'], null, 'A drawn hunt in Cache, Rich and East Box Elder counties and the Uintah Basin Zone. One bird for the whole season.'],
+  ['duck', 'Duck, coot and snipe', /\b(ducks?|mallards?|teal|wid?geons?|gadwalls?|pintails?|canvasbacks?|mergansers?|coots?|snipe|redheads?|bluebills?|scaup)\b/, { north: ['duck-n', 'scaup-n'], south: ['duck-s', 'scaup-s'] }, /duck/i, null],
+  ['goose', 'Geese', /\b(goose|geese|honkers?|specklebell(y|ies)|white-?fronted)\b/, ['geese-wf', 'geese-wf2', 'geese-ebe', 'geese-n', 'geese-n2', 'geese-s'], /duck/i, null],
+  ['swan', 'Tundra swan', /\bswans?\b/, ['swan'], /duck/i, null],
+  ['turkey', 'Wild turkey', /\b(turkeys?|gobblers?)\b/, ['turkey-fall', 'turkey-general', 'turkey-le'], /turkey/i, null]
 ];
 /* Recognised by name, but the app has no season data for them yet. Saying so
    beats a confident wrong answer. Tested BEFORE the list above, because
    "sage grouse" contains "grouse" and "sandhill crane" is not a duck. */
 const F_BIRD_GAPS = [
-  ['Sage grouse', /\bsage[\s-]?grouse\b/, 'a limited-entry draw hunt with a short season and closed areas'],
-  ['Sharp-tailed grouse', /\bsharp[\s-]?tail(ed)?s?\b/, 'a limited-entry draw hunt with closed areas'],
-  ['Sandhill crane', /\b(sandhills?|cranes?)\b/, 'a limited-entry draw hunt'],
-  ['Mourning dove', /\b(doves?)\b/, 'an early season that usually opens September 1'],
-  ['Band-tailed pigeon', /\b(band[\s-]?tail(ed)?|pigeons?)\b/, 'a short early season']
+  ['Rails', /\brails?\b/, 'a species with no open season in Utah at all']
 ];
 /* Utah splits waterfowl by county, and the guidebook lists which county is in
    which zone, so the zone is read off the county rather than guessed. Tooele is
@@ -165,7 +171,7 @@ function fCountyZone(c) {
   return null;                                  // Tooele, or somewhere we cannot place
 }
 
-const F_BIRD_CHIP = { pheasant: 'Pheasant', chukar: 'Chukar', quail: 'Quail', grouse: 'Grouse', ptarmigan: 'Ptarmigan', duck: 'Duck', goose: 'Geese', swan: 'Swan', turkey: 'Turkey' };
+const F_BIRD_CHIP = { pheasant: 'Pheasant', chukar: 'Chukar', quail: 'Quail', grouse: 'Grouse', 'sage-grouse': 'Sage grouse', sharptail: 'Sharp-tailed', ptarmigan: 'Ptarmigan', duck: 'Duck', goose: 'Geese', swan: 'Swan', crane: 'Crane', dove: 'Dove', pigeon: 'Pigeon', crow: 'Crow', turkey: 'Turkey', cottontail: 'Cottontail', hare: 'Snowshoe hare', jackrabbit: 'Jackrabbit' };
 const fBird = k => F_BIRDS.find(b => b[0] === k);
 const fPointZone = p => fCountyZone(String(p.county || '').split(',')[0]);   // some points span two counties
 /* Where today sits in the season. */
@@ -189,7 +195,7 @@ function fBirdRow(p, place) {
     <span class="v">${esc(v)}<small>${sub}</small></span></button>`;
 }
 function fBirdPlaces(bird, place) {
-  const pts = (DB.birds || []).filter(p => bird[4].test(p.species || ''));
+  const pts = bird[4] ? (DB.birds || []).filter(p => bird[4].test(p.species || '')) : [];   // rabbits and doves have no marsh to point at
   const hid = fHomeId(place);
   const key = p => {
     const d = hid && (p.drive || {})[hid];
@@ -238,7 +244,8 @@ function fBirdView(q) {
 
   h += `<div class="sec-title">Where to go${pts.length ? ' &middot; ' + pts.length + ' place' + (pts.length === 1 ? '' : 's') : ''}${hrec ? ' &middot; by drive from ' + esc(hrec.label) : ''}</div>`;
   if (!pts.length) {
-    h += `<p class="empty">No access points in the app are tagged for ${esc(bird[1].toLowerCase())}. The Access tab has all 88.</p>`;
+    h += bird[5] ? `<p class="fine" style="padding-left:2px">${esc(bird[5])}</p>`
+      : `<p class="empty">No access points in the app are tagged for ${esc(bird[1].toLowerCase())}. The Access tab has all 88.</p>`;
   } else {
     h += `<div class="card">` + pts.slice(0, 25).map(p => fBirdRow(p, place)).join('') + `</div>`;
     if (pts.length > 25) h += `<p class="fine">Showing the 25 closest of ${pts.length}. The Access tab has the rest.</p>`;
@@ -256,8 +263,8 @@ function fBirdView(q) {
 const fGapNotice = g => `<div class="warnbox" style="margin-top:12px"><b>${esc(g[0])} is not in the app yet.</b>
   In Utah it is ${esc(g[2])}, so the dates are not something to guess at. Look it up at
   wildlife.utah.gov before you plan around it.</div>
-  <p class="fine" style="padding-left:2px">The app carries pheasant, chukar, quail, dusky and ruffed grouse, ptarmigan,
-  duck and scaup in both zones, geese in all four goose areas, tundra swan and turkey.</p>`;
+  <p class="fine" style="padding-left:2px">The app carries every other species on the hunting and combination licence:
+  upland birds, small game, doves, crow, sandhill crane, the drawn grouse, waterfowl in both zones and turkey.</p>`;
 
 function vFind() {
   fLoad();

@@ -9,7 +9,7 @@ const today = () => { const n = new Date(); return new Date(n.getFullYear(), n.g
 const d0 = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const days = (a, b) => Math.round((b - a) / DAY);
 const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-const GC = { bird: 'var(--bird)', deer: 'var(--deer)', elk: 'var(--elk)', turkey: 'var(--turkey)' };
+const GC = { bird: 'var(--bird)', deer: 'var(--deer)', elk: 'var(--elk)', turkey: 'var(--turkey)', smallgame: 'var(--small)' };
 
 let DB = { birds: [], seasons: null, config: null, community: null, lake: null, snow: null };
 let LOT = null, lotState = 'UT';
@@ -736,7 +736,7 @@ function sheetDraw(code) {
 }
 
 function vSeasons() {
-  const groups = ['bird', 'deer', 'elk', 'turkey'];
+  const groups = ['bird', 'smallgame', 'deer', 'elk', 'turkey'];
   let h = `<div class="seg" style="margin-top:14px"><button data-smode="dates" aria-pressed="${seasonsMode === 'dates'}">Season dates</button><button data-smode="draw" aria-pressed="${seasonsMode === 'draw'}">Draw odds</button><button data-smode="find" aria-pressed="${seasonsMode === 'find'}">Find a hunt</button></div>`;
   if (seasonsMode === 'draw') return h + vDraw();
   if (seasonsMode === 'find') return h + (typeof vFind === 'function' ? vFind() : '');
@@ -745,7 +745,7 @@ function vSeasons() {
       .map(s => ({ s, st: seasonState(s) }))
       .sort((a, b) => d0(a.s.start) - d0(b.s.start));
     if (!rows.length) continue;
-    h += `<div class="sec-title">${g === 'bird' ? 'Birds' : g === 'deer' ? 'Deer' : g === 'elk' ? 'Elk' : 'Turkey'}</div><div class="card">`;
+    h += `<div class="sec-title">${{ bird: 'Birds', smallgame: 'Small game', deer: 'Deer', elk: 'Elk', turkey: 'Turkey' }[g]}</div><div class="card">`;
     h += rows.map(x => `<button class="row" data-season="${esc(x.s.id)}" style="--g:${GC[g]}">
       <span class="pill"></span>
       <span><span class="t">${esc(x.s.name)}</span>
