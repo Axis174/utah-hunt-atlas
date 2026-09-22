@@ -2,6 +2,7 @@
  "homes": [
   {
    "id": "nsl",
+      "county": "Davis",
    "label": "North Salt Lake",
    "lat": 40.8477,
    "lon": -111.9069,
@@ -19,6 +20,7 @@
   },
   {
    "id": "heber",
+      "county": "Wasatch",
    "label": "Heber City",
    "lat": 40.50646,
    "lon": -111.4133,
@@ -38,6 +40,7 @@
   },
   {
    "id": "torrey",
+      "county": "Wayne",
    "label": "Torrey",
    "lat": 38.2999,
    "lon": -111.4194,

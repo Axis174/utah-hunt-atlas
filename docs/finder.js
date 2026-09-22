@@ -135,8 +135,8 @@ const F_BIRDS = [
   ['quail', 'Quail', /\b(quail|gambels?)\b/, ['quail'], /quail|upland/i],
   ['grouse', 'Dusky and ruffed grouse', /\b(grouse|dusky|ruffed)\b/, ['dusky-ruffed'], /grouse|upland/i],
   ['ptarmigan', 'White-tailed ptarmigan', /\bptarmigans?\b/, ['ptarmigan'], /ptarmigan/i],
-  ['duck', 'Duck, coot and snipe', /\b(ducks?|mallards?|teal|wid?geons?|gadwalls?|pintails?|canvasbacks?|mergansers?|coots?|snipe|redheads?|bluebills?|scaup)\b/, ['duck-n', 'scaup-n'], /duck/i],
-  ['goose', 'Geese', /\b(goose|geese|honkers?|specklebell(y|ies)|white-?fronted)\b/, ['geese-wf', 'geese-wf2'], /duck/i],
+  ['duck', 'Duck, coot and snipe', /\b(ducks?|mallards?|teal|wid?geons?|gadwalls?|pintails?|canvasbacks?|mergansers?|coots?|snipe|redheads?|bluebills?|scaup)\b/, { north: ['duck-n', 'scaup-n'], south: ['duck-s', 'scaup-s'] }, /duck/i],
+  ['goose', 'Geese', /\b(goose|geese|honkers?|specklebell(y|ies)|white-?fronted)\b/, ['geese-wf', 'geese-wf2', 'geese-ebe', 'geese-n', 'geese-n2', 'geese-s'], /duck/i],
   ['swan', 'Tundra swan', /\bswans?\b/, ['swan'], /duck/i],
   ['turkey', 'Wild turkey', /\b(turkeys?|gobblers?)\b/, ['turkey-fall', 'turkey-general', 'turkey-le'], /turkey/i]
 ];
@@ -150,15 +150,24 @@ const F_BIRD_GAPS = [
   ['Mourning dove', /\b(doves?)\b/, 'an early season that usually opens September 1'],
   ['Band-tailed pigeon', /\b(band[\s-]?tail(ed)?|pigeons?)\b/, 'a short early season']
 ];
-/* The season list carries Northern Zone waterfowl and the Wasatch Front goose
-   area only. Quoting those dates to somebody hunting the south would be exactly
-   the kind of confident wrong answer this app is supposed to avoid, so a place
-   known to sit outside gets told, and every zoned season prints its own area. */
-const F_ZONED = { duck: 1, goose: 1, swan: 1 };
-const F_HOME_ZONE = { nsl: 'north', heber: 'north', torrey: 'south' };
+/* Utah splits waterfowl by county, and the guidebook lists which county is in
+   which zone, so the zone is read off the county rather than guessed. Tooele is
+   split down I-80 and deliberately comes back unknown. Goose areas are drawn on
+   maps instead of county lines, so geese show every area by name rather than
+   the app picking one for you. Transcribed 2026-09-22 from the 2026-27
+   guidebook, pages 10 and 64-66. */
+const F_NORTH_CO = ['box elder', 'cache', 'daggett', 'davis', 'duchesne', 'morgan', 'rich', 'salt lake', 'summit', 'uintah', 'utah', 'wasatch', 'weber'];
+const F_SOUTH_CO = ['beaver', 'carbon', 'emery', 'garfield', 'grand', 'iron', 'juab', 'kane', 'millard', 'piute', 'san juan', 'sanpete', 'sevier', 'washington', 'wayne'];
+function fCountyZone(c) {
+  c = String(c || '').toLowerCase().replace(/\s+co\.?$/, '').trim();
+  if (F_NORTH_CO.indexOf(c) >= 0) return 'north';
+  if (F_SOUTH_CO.indexOf(c) >= 0) return 'south';
+  return null;                                  // Tooele, or somewhere we cannot place
+}
 
 const F_BIRD_CHIP = { pheasant: 'Pheasant', chukar: 'Chukar', quail: 'Quail', grouse: 'Grouse', ptarmigan: 'Ptarmigan', duck: 'Duck', goose: 'Geese', swan: 'Swan', turkey: 'Turkey' };
 const fBird = k => F_BIRDS.find(b => b[0] === k);
+const fPointZone = p => fCountyZone(String(p.county || '').split(',')[0]);   // some points span two counties
 /* Where today sits in the season. */
 function fOpen(s) {
   const now = new Date(); now.setHours(0, 0, 0, 0);
@@ -191,29 +200,43 @@ function fBirdPlaces(bird, place) {
   return pts.sort((a, b) => key(a) - key(b));
 }
 function fBirdView(q) {
-  const bird = q.bird, place = q.place, hid = fHomeId(place), zone = hid ? F_HOME_ZONE[hid] : null;
-  const zoned = F_ZONED[bird[0]];
+  const bird = q.bird, place = q.place, hid = fHomeId(place);
+  const hrec = hid && (DB.config.homes || []).find(x => x.id === hid);
+  const zone = hrec ? fCountyZone(hrec.county) : null;
+  const zoned = !Array.isArray(bird[3]);                 // ducks: the answer depends on the zone
+  const pts = fBirdPlaces(bird, place);
   let h = `<div class="sec-title">${esc(bird[1])}${place ? ' &middot; ' + esc(place.label || 'here') : ''}</div>`;
 
-  if (zoned && zone === 'south') {
-    h += `<div class="warnbox" style="margin-top:4px"><b>No dates for you here.</b> The app only carries
-      ${esc(bird[0] === 'goose' ? 'the Wasatch Front goose area' : 'Northern Zone')} waterfowl dates, and
-      ${esc((place && place.label) || ((DB.config.homes || []).find(x => x.id === hid) || {}).label || 'that spot')} is in the south. The southern zone opens on different days. Check the 2026
-      waterfowl guidebook at wildlife.utah.gov/waterfowl before you go.</div>`;
-  } else {
-    const seasons = bird[3].map(fSeason).filter(Boolean);
+  {
+    /* The zone that governs is the one you are STANDING in, not the one you
+       drove from. Torrey is in the Southern Zone, but every waterfowl access
+       point the app carries is a northern marsh - quoting southern dates over a
+       list of northern places would be a trap. So the seasons shown cover the
+       home's zone and every zone the listed places are actually in. */
+    const zs = [];
+    if (zone) zs.push(zone);
+    pts.slice(0, 25).forEach(x => { const z = fPointZone(x); if (z && zs.indexOf(z) < 0) zs.push(z); });
+    if (!zs.length) { zs.push('north', 'south'); }
+    const ids = !zoned ? bird[3] : zs.reduce((a, z) => a.concat(bird[3][z] || []), []);
+    if (zoned && !zone) h += `<div class="warnbox" style="margin-top:4px"><b>Both zones are shown.</b> Utah splits
+      waterfowl into a Northern and a Southern Zone on county lines, and the app cannot tell which one
+      ${esc((place && place.label) || 'that spot')} is in (Tooele County is split down I-80).
+      Read the zone off the area on each season below.</div>`;
+    else if (zoned && zs.length > 1) h += `<div class="warnbox" style="margin-top:4px"><b>You would be crossing a zone line.</b>
+      ${esc(hrec.label)} is in the ${esc(zone === 'north' ? 'Northern' : 'Southern')} Zone, but the places below are in the other one.
+      <b>The season that counts is the zone you hunt in, not the one you live in</b> - both are shown, so read the area on each.</div>`;
+    const seasons = ids.map(fSeason).filter(Boolean);
     h += `<div class="card">` + seasons.map(s => {
       const o = fOpen(s);
       return `<div class="row" style="--g:${o[0] === 'open' ? 'var(--brand)' : o[0] === 'soon' ? 'var(--accent)' : 'var(--faint)'}"><span class="pill"></span>
         <span><span class="t">${esc(s.name)}</span><span class="s">${esc(fmt(d0(s.start)))} to ${esc(fmt(d0(s.end)))}${s.bag && s.bag !== '-' ? ' &middot; ' + esc(s.bag) : ''}<br>${esc(s.area)} &middot; ${esc(s.permit)}${s.note ? '<br>' + esc(s.note) : ''}</span></span>
         <span class="v" style="font-size:12px">${esc(o[1])}</span></div>`;
     }).join('') + `</div>`;
-    if (zoned) h += `<p class="fine" style="padding-left:2px">These are <b>${esc(seasons[0] ? seasons[0].area : '')}</b> dates. Utah splits waterfowl by zone and geese by area - confirm yours in the guidebook before opening morning.</p>`;
+    if (zoned && zone && zs.length === 1) h += `<p class="fine" style="padding-left:2px">These are <b>${esc(seasons[0] ? seasons[0].area : '')}</b> dates, because ${esc(hrec.label)} is in ${esc(hrec.county)} County. Confirm the zone in the guidebook before opening morning.</p>`;
+    if (bird[0] === 'goose') h += `<p class="fine" style="padding-left:2px">Goose areas are drawn on maps, not county lines, so all four are listed. Check which one you are in at hunt.utah.gov before opening morning.</p>`;
   }
 
-  const pts = fBirdPlaces(bird, place);
-  const hlab = hid && (DB.config.homes || []).find(x => x.id === hid);
-  h += `<div class="sec-title">Where to go${pts.length ? ' &middot; ' + pts.length + ' place' + (pts.length === 1 ? '' : 's') : ''}${hlab ? ' &middot; by drive from ' + esc(hlab.label) : ''}</div>`;
+  h += `<div class="sec-title">Where to go${pts.length ? ' &middot; ' + pts.length + ' place' + (pts.length === 1 ? '' : 's') : ''}${hrec ? ' &middot; by drive from ' + esc(hrec.label) : ''}</div>`;
   if (!pts.length) {
     h += `<p class="empty">No access points in the app are tagged for ${esc(bird[1].toLowerCase())}. The Access tab has all 88.</p>`;
   } else {
@@ -234,7 +257,7 @@ const fGapNotice = g => `<div class="warnbox" style="margin-top:12px"><b>${esc(g
   In Utah it is ${esc(g[2])}, so the dates are not something to guess at. Look it up at
   wildlife.utah.gov before you plan around it.</div>
   <p class="fine" style="padding-left:2px">The app carries pheasant, chukar, quail, dusky and ruffed grouse, ptarmigan,
-  Northern Zone duck and scaup, Wasatch Front geese, tundra swan and turkey.</p>`;
+  duck and scaup in both zones, geese in all four goose areas, tundra swan and turkey.</p>`;
 
 function vFind() {
   fLoad();
