@@ -9,10 +9,31 @@
 
 let HU = null;                         // hunt_units_2026.json
 let fq = { text: '', sp: null, wp: null, place: null, pt: null, units: null, ask: null };
-const F_SPECIES = [['elk', /\belk|bull|spike|cow elk\b/], ['deer', /\bdeer|buck|muley|mule\b/], ['pronghorn', /\bpronghorn|antelope|goat(?!\s*mountain)|speed goat\b/],
-  ['moose', /\bmoose\b/], ['sheep', /\bsheep|bighorn|ram\b/], ['mountain goat', /\bmountain goat|mtn goat\b/], ['bison', /\bbison|buffalo\b/]];
-const F_WEAPON = [['archery', /\barch|bow\b/], ['muzzleloader', /\bmuzz|smoke ?pole\b/], ['rifle', /\brifle|any legal|alw|gun\b/]];
+/* The first match wins, so the narrow name is tested before the wide one that
+   contains it: "mountain goat" before the "goat" of pronghorn, "bull moose"
+   before the "bull" of elk. Every alternative is anchored at both ends, or a
+   stray "ram" inside another word picks bighorn sheep. */
+const F_SPECIES = [['mountain goat', /\b(mountain|mtn)\s*goat\b/], ['moose', /\bmoose\b/], ['bison', /\b(bison|buffalo)\b/],
+  ['sheep', /\b(sheep|bighorn|rams?)\b/], ['pronghorn', /\b(pronghorn|antelope|speed\s*goat|goat)\b/],
+  ['elk', /\b(elk|bull|spike|wapiti)\b/], ['deer', /\b(deer|buck|muley|mule)\b/]];
+const F_WEAPON = [['archery', /\b(arch\w*|bow\w*|compound)\b/], ['muzzleloader', /\b(muzz\w*|smoke\s*pole|black\s*powder)\b/],
+  ['rifle', /\b(rifle|any legal|alw|gun|centerfire)\b/]];
 const F_LABEL = { elk: 'Elk', deer: 'Deer', pronghorn: 'Pronghorn', moose: 'Moose', sheep: 'Bighorn sheep', 'mountain goat': 'Mountain goat', bison: 'Bison' };
+
+/* Compare words, not characters, so "Wasatch, 7 points" and the unit name
+   "Wasatch Mtns" can meet in the middle: punctuation becomes a space. */
+const fWords = s => ' ' + String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+const F_RANGE = /\s+(mtns?|mountains?)$/i;                 // nobody says "Wasatch Mtns" out loud
+/* Every way a hunt unit can be named in a sentence, longest needle first. */
+function fUnitNames() {
+  const out = [];
+  for (const base of new Set((UNITS || []).map(u => u.n.split(',')[0]))) {
+    out.push([fWords(base), base]);
+    const short = base.replace(F_RANGE, '');
+    if (short !== base && short.trim()) out.push([fWords(short), base]);
+  }
+  return out.sort((a, b) => b[0].length - a[0].length);
+}
 
 function fLoad() {
   if (!HU) fetch('data/hunt_units_2026.json').then(r => r.json()).then(j => { HU = j; if (tab === 'seasons') render(); }).catch(() => { HU = { hunts: {} }; });
@@ -21,16 +42,16 @@ function fLoad() {
 }
 /* Read the sentence. Anything not found becomes a question. */
 function fParse(text) {
-  const t = ' ' + text.toLowerCase().replace(/[^a-z0-9 ,'-]/g, ' ') + ' ';
+  const t = fWords(text);
   const q = { text, sp: null, wp: null, place: null, pt: null, wantAntlerless: /\b(cow|antlerless|doe|meat|freezer)\b/.test(t), wantGeneral: /\b(general|over the counter|otc|no draw|guaranteed)\b/.test(t), wantLE: /\b(limited|draw|le |trophy|bonus)\b/.test(t) };
   for (const [k, re] of F_SPECIES) if (re.test(t)) { q.sp = k; break; }
   for (const [k, re] of F_WEAPON) if (re.test(t)) { q.wp = k; break; }
   const m = /(\d{1,2})\s*(?:bonus|preference)?\s*(?:points?|pts)/.exec(t); if (m) q.pt = +m[1];
-  for (const h of (DB.config.homes || [])) if ((h.aliases || []).some(a => t.includes(' ' + a + ' ') || t.includes(' ' + a + ',') || t.includes('my ' + a))) { q.place = { kind: 'home', id: h.id, label: h.label, lat: h.lat, lon: h.lon }; break; }
+  for (const h of (DB.config.homes || [])) if ((h.aliases || []).some(a => t.includes(fWords(a)))) { q.place = { kind: 'home', id: h.id, label: h.label, lat: h.lat, lon: h.lon }; break; }
   if (!q.place && /\b(here|where i am|my location|gps|right now)\b/.test(t)) q.place = { kind: 'gps' };
   if (!q.place && UNITS) {                                   // a unit named outright, longest match wins
-    const hit = UNITS.map(u => u.n).filter(n => t.includes(' ' + n.toLowerCase().split(',')[0] + ' ') || t.includes(' ' + n.toLowerCase() + ' ')).sort((a, b) => b.length - a.length)[0];
-    if (hit) q.place = { kind: 'unit', label: hit, units: UNITS.filter(u => u.n.split(',')[0] === hit.split(',')[0]).map(u => u.n) };
+    const hit = fUnitNames().find(([needle]) => t.includes(needle));
+    if (hit) q.place = { kind: 'unit', label: hit[1], units: UNITS.filter(u => u.n.split(',')[0] === hit[1]).map(u => u.n) };
   }
   return q;
 }
@@ -50,7 +71,8 @@ const fSeason = id => (DB.seasons.seasons || []).find(s => s.id === id);
 const fDates = id => { const s = fSeason(id); return s ? `${fmt(d0(s.start))} to ${fmt(d0(s.end))}` : ''; };
 function fOddsLine(h) {                                       // last year's result at the user's points, if they set them
   if (!ODDS) return '';
-  const grp = h.g, key = grp + '|' + h.s, pts = fq.pt != null ? fq.pt : (draw.pts[key] != null ? draw.pts[key] : null);
+  const grp = h.g, key = grp + '|' + h.s, typed = fq.parsed && fq.parsed.pt;
+  const pts = typed != null ? typed : (draw.pts[key] != null ? draw.pts[key] : null);
   if (pts == null) return '<span class="s">Set your points to see last year\'s odds.</span>';
   const o = oddsAt(h, pts); return `<span class="s">${pts} pt${pts === 1 ? '' : 's'} last year: <b>${esc(o.txt)}</b>${o.pct != null ? ' (' + o.pct + '%)' : ''}</span>`;
 }
@@ -94,6 +116,9 @@ function fResults(q, myUnits) {
   if (!q.wantGeneral) card(`Draw hunts here (${yr || 'last year'} results)`, drawRows.slice(0, 40));
   return out;
 }
+/* Unit names carry their own commas ("Wasatch Mtns, East"), so joining a list of
+   them with a comma reads as one long run. */
+const fList = a => a.map(esc).join('; ');
 function vFind() {
   fLoad();
   const q = fq.parsed || null;
@@ -109,10 +134,10 @@ function vFind() {
   if (!myUnits.length) return h + `<p class="empty">No hunt boundary found under ${esc(q.place.label || 'that spot')}. Try naming a unit.</p>`;
   const res = fResults(q, myUnits);
   h += `<div class="sec-title">${esc(F_LABEL[q.sp])}${q.wp ? ' &middot; ' + esc(q.wp) : ''} &middot; ${esc(q.place.label || 'here')}</div>
-    <p class="fine" style="padding-left:2px">Hunt boundaries under that spot: <b>${myUnits.map(esc).join(', ')}</b>. One place can sit in several overlapping hunts, so check the boundary on the map before you buy.</p>`;
+    <p class="fine" style="padding-left:2px">Hunt boundaries under that spot: <b>${fList(myUnits)}</b>. One place can sit in several overlapping hunts, so check the boundary on the map before you buy.</p>`;
   if (!q.wp) h += fAsk('Which weapon? (or leave it open)', [['archery', 'Archery'], ['muzzleloader', 'Muzzleloader'], ['rifle', 'Rifle / any legal weapon'], ['any', 'Show all']], 'wp');
   for (const c of res) h += `<div class="sec-title">${esc(c.title)}</div><div class="card">${c.rows.map(r => `<${r.code ? 'button' : 'div'} class="row" ${r.code ? `data-draw="${esc(r.code)}"` : ''} style="--g:var(--brand)"><span class="pill"></span><span><span class="t">${esc(r.t)}${r.sub || ''}</span><span class="s">${r.s}</span></span><span class="v"></span></${r.code ? 'button' : 'div'}>`).join('')}</div>`;
-  if (!res.length) h += `<p class="empty">Nothing matched in ${myUnits.map(esc).join(', ')} for ${esc(F_LABEL[q.sp])}${q.wp ? ' with ' + q.wp : ''}. Try another weapon or drop the extra words.</p>`;
+  if (!res.length) h += `<p class="empty">Nothing matched in ${fList(myUnits)} for ${esc(F_LABEL[q.sp])}${q.wp ? ' with ' + q.wp : ''}. Try another weapon or drop the extra words.</p>`;
   h += `<p class="fine" style="padding-left:2px">General dates from the 2026 guidebook; unit lists from UDWR's 2026 hunt boundaries; draw odds from UDWR's published results. Over-the-counter permits still have sale dates and, for some hunts, caps. Confirm at wildlife.utah.gov before you buy.</p>`;
   return h;
 }

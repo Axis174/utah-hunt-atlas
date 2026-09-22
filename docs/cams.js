@@ -162,6 +162,17 @@ function camLight(site, iso) {               // legal shooting light that day, a
   const hr = x => { const s = x.toLocaleTimeString('en-GB', { timeZone: 'America/Denver', hour12: false }); return +s.slice(0, 2) + (+s.slice(3, 5)) / 60; };
   return [hr(t.sunrise) - 0.5, hr(t.sunset) + 0.5];
 }
+/* Was the sun up when the camera fired? The night flag next to it is about the
+   picture (a grey infrared frame), not the sky: this camera shoots infrared at
+   noon as well, so the two have to be said separately. */
+function camDay(site, iso) {
+  if (!SUN) return null;
+  const d = new Date(iso.slice(0, 10) + 'T12:00:00'), t = SUN.getTimes(d, (site && site.lat) || 40.76, (site && site.lon) || -111.89);
+  if (!t.sunrise || isNaN(t.sunrise) || !t.sunset || isNaN(t.sunset)) return null;
+  const hr = x => { const s = x.toLocaleTimeString('en-GB', { timeZone: 'America/Denver', hour12: false }); return +s.slice(0, 2) + (+s.slice(3, 5)) / 60; };
+  const h = camHour({ iso });
+  return h >= hr(t.sunrise) && h <= hr(t.sunset);
+}
 const camMoon = iso => { if (!SUN) return null; const f = SUN.getMoonIllumination(new Date(iso)).fraction; return f < 0.25 ? 'Dark moon' : f < 0.75 ? 'Half moon' : 'Bright moon'; };
 
 /* ---------------------------------------------------------------- rules --- */
@@ -240,9 +251,12 @@ function camReviewHtml(site, photos) {
 async function camOpenPhoto(id) {
   const photos = await camPhotos(camSite), list = camPick(photos), i = list.findIndex(p => p.id === id), p = list[i];
   if (!p) return;
-  const moon = camMoon(p.iso);
+  const site = (await camSites()).find(s => s.id === camSite);
+  const day = camDay(site, p.iso);                     // the sky, from the site's own sunrise and sunset
+  const when = day == null ? '' : day ? ' &middot; daylight' : ' &middot; after dark';
+  const moon = day === false ? camMoon(p.iso) : null;  // meaningless on a photo taken at noon
   openSheet(`<img src="${camUrl(p)}" alt="" style="width:100%;display:block;border-radius:12px 12px 0 0">
-    <p class="where mono" style="padding-top:10px">${esc(p.iso.replace('T', ' '))}${moon ? ' &middot; ' + moon : ''}${p.night ? ' &middot; night' : ' &middot; daylight'} &middot; ${i + 1} of ${list.length}</p>
+    <p class="where mono" style="padding-top:10px">${esc(p.iso.replace('T', ' '))}${when}${p.night ? ' &middot; infrared' : ' &middot; colour'}${moon ? ' &middot; ' + moon : ''} &middot; ${i + 1} of ${list.length}</p>
     <div class="camtags">${CAM_TAGS.map(t => `<button data-cam-tag="${t[0]}" data-cam-id="${esc(p.id)}" aria-pressed="${p.tag === t[0]}" style="--c:${t[2]}">${t[1]}</button>`).join('')}</div>
     <div class="acts"><button class="btn ghost" data-cam-photo="${esc((list[i - 1] || {}).id || '')}"${i ? '' : ' disabled'}>&larr; Previous</button>
       <div class="stepper"><button data-cam-n="-1" data-cam-id="${esc(p.id)}">&minus;</button><span><b>${p.n || 1}</b> animal${(p.n || 1) === 1 ? '' : 's'}</span><button data-cam-n="1" data-cam-id="${esc(p.id)}">+</button></div>
@@ -316,7 +330,7 @@ document.addEventListener('click', async e => {
   }
   if (d.camBulknone) { for (const p of (await camPhotos(camSite)).filter(x => x.reject && !x.tag)) { p.tag = 'none'; await camPut('photos', p); } camFlush(camSite); render(); return; }
   if (d.camExport) {
-    const site = (await camSites()).find(s => s.id === camSite), rows = [['site', 'file', 'taken', 'tag', 'animals', 'night', 'black_or_blank']];
+    const site = (await camSites()).find(s => s.id === camSite), rows = [['site', 'file', 'taken', 'tag', 'animals', 'infrared', 'black_or_blank']];
     for (const p of await camPhotos(camSite)) rows.push([site.name, p.name, p.iso, p.tag ? CAM_TAG[p.tag][1] : '', p.tag && p.tag !== 'none' ? p.n || 1 : '', p.night ? 'yes' : 'no', p.reject ? 'yes' : 'no']);
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')], { type: 'text/csv' }));
     a.download = site.name.replace(/[^\w-]+/g, '_') + '_camera_log.csv'; a.click(); return;

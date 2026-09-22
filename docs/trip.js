@@ -19,6 +19,9 @@ function bearing(aLat, aLon, bLat, bLon) {
   return (Math.atan2(y, x) / r + 360) % 360;
 }
 const compass = b => ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'][Math.round(b / 22.5) % 16];
+/* The Search and Rescue line is read out loud, so spell the direction. */
+const SPOKEN = { N: 'north', NNE: 'north-northeast', NE: 'northeast', ENE: 'east-northeast', E: 'east', ESE: 'east-southeast', SE: 'southeast', SSE: 'south-southeast',
+  S: 'south', SSW: 'south-southwest', SW: 'southwest', WSW: 'west-southwest', W: 'west', WNW: 'west-northwest', NW: 'northwest', NNW: 'north-northwest' };
 
 function tripText() {
   const t = TRIP, L = [];
@@ -75,14 +78,20 @@ async function tripBack() {
   if (!navigator.geolocation) { openSheet('<h3>Back to truck</h3><p class="where">This phone is not sharing location with the app.</p>'); return; }
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude, lon = pos.coords.longitude, tr = TRIP && TRIP.truck;
-    const units = UNITS ? unitsAt(lon, lat).map(u => esc(u.n)).join(', ') : '';
+    const un = UNITS ? unitsAt(lon, lat).map(u => esc(u.n)) : [];
+    const units = un.length > 1 ? un.slice(0, -1).join(', ') + ' and ' + un[un.length - 1] : un[0] || '';
     const near = DB.birds.map(p => ({ p, mi: miles(lat, lon, p.lat, p.lon) })).sort((a, b) => a.mi - b.mi)[0];
+    /* A bare mileage to a landmark sounds like "nearby", so give the direction -
+       and say nothing at all past 25 miles. The access points are clustered in
+       the north, so the closest one to a southern hunt can be 100 miles off, and
+       naming it would point Search and Rescue at the wrong end of the state. */
+    const land = near && near.mi <= 25 ? `, about ${near.mi.toFixed(1)} miles ${SPOKEN[compass(bearing(near.p.lat, near.p.lon, lat, lon))]} of ${esc(near.p.name)}` : '';
     let truck = '<p class="fine" style="padding:8px 16px 0">No truck pinned. Pin it next time before you walk in.</p>';
     if (tr) { const mi = miles(lat, lon, tr.lat, tr.lon), b = bearing(lat, lon, tr.lat, tr.lon); truck = `<div class="stats"><div class="stat"><div class="k">Truck is</div><div class="v">${mi < 0.2 ? Math.round(mi * 5280) + ' ft' : mi.toFixed(2) + ' mi'}</div></div><div class="stat"><div class="k">Heading</div><div class="v">${Math.round(b)}&deg; ${compass(b)}</div></div><div class="stat"><div class="k">Elevation change</div><div class="v" style="font-size:12px">${pos.coords.altitude != null && tr.alt != null ? Math.round((tr.alt - pos.coords.altitude) * 3.28084) + ' ft' : '--'}</div></div></div><p class="fine" style="padding:6px 16px 0">Straight line, not a route. Hold the phone flat, turn until the compass reads ${Math.round(b)}&deg;, and walk. Cliffs and drainages are on the Map tab.</p>`; }
     openSheet(`<h3>Where I am</h3>
       <p class="where mono" style="font-size:15px">${lat.toFixed(5)}, ${lon.toFixed(5)}</p>
       <p class="where mono">${esc(dms(lat, 'N', 'S'))} &nbsp; ${esc(dms(lon, 'E', 'W'))} &middot; &plusmn;${Math.round(pos.coords.accuracy)} m${pos.coords.altitude != null ? ' &middot; ' + Math.round(pos.coords.altitude * 3.28084) + ' ft' : ''}</p>
-      <div class="warnbox" style="margin:8px 16px 0"><b>If you call for help, read this:</b> "I am at ${lat.toFixed(5)} north, ${Math.abs(lon).toFixed(5)} west${units ? ', in the ' + units + ' hunt unit' : ''}${near ? ', about ' + near.mi.toFixed(1) + ' miles from ' + esc(near.p.name) : ''}." Then your condition, your vehicle, and who is with you.</div>
+      <div class="warnbox" style="margin:8px 16px 0"><b>If you call for help, read this:</b> "I am at ${lat.toFixed(5)} north, ${Math.abs(lon).toFixed(5)} west${units ? ', in the ' + units + ' hunt unit' + (un.length > 1 ? 's' : '') : ''}${land}." Then your condition, your vehicle, and who is with you.</div>
       ${truck}
       <div class="acts"><button class="btn ghost" data-copy="${lat.toFixed(5)}, ${lon.toFixed(5)}">Copy coordinates</button>${TRIP && TRIP.phone ? `<a class="btn ghost" href="sms:${esc(TRIP.phone)}?&body=${encodeURIComponent('My location: ' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ' (accuracy ' + Math.round(pos.coords.accuracy) + ' m). ')}">Text my spot</a>` : ''}<button class="btn ghost" data-trip="pin">Pin truck here</button></div>
       <p class="fine" style="padding:10px 16px">Texts only go out when the phone finds signal; they queue until then. iPhone 14 and later can also send an Emergency SOS by satellite from Settings when there is no signal at all.</p>`);
