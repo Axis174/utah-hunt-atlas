@@ -43,8 +43,10 @@ function fLoad() {
 /* Read the sentence. Anything not found becomes a question. */
 function fParse(text) {
   const t = fWords(text);
-  const q = { text, sp: null, wp: null, place: null, pt: null, wantAntlerless: /\b(cow|antlerless|doe|meat|freezer)\b/.test(t), wantGeneral: /\b(general|over the counter|otc|no draw|guaranteed)\b/.test(t), wantLE: /\b(limited|draw|le |trophy|bonus)\b/.test(t) };
-  for (const [k, re] of F_SPECIES) if (re.test(t)) { q.sp = k; break; }
+  const q = { text, sp: null, bird: null, gap: null, wp: null, place: null, pt: null, wantAntlerless: /\b(cow|antlerless|doe|meat|freezer)\b/.test(t), wantGeneral: /\b(general|over the counter|otc|no draw|guaranteed)\b/.test(t), wantLE: /\b(limited|draw|le |trophy|bonus)\b/.test(t) };
+  for (const g of F_BIRD_GAPS) if (g[1].test(t)) { q.gap = g; break; }
+  if (!q.gap) for (const b of F_BIRDS) if (b[2].test(t)) { q.bird = b; break; }
+  if (!q.gap && !q.bird) for (const [k, re] of F_SPECIES) if (re.test(t)) { q.sp = k; break; }
   for (const [k, re] of F_WEAPON) if (re.test(t)) { q.wp = k; break; }
   const m = /(\d{1,2})\s*(?:bonus|preference)?\s*(?:points?|pts)/.exec(t); if (m) q.pt = +m[1];
   for (const h of (DB.config.homes || [])) if ((h.aliases || []).some(a => t.includes(fWords(a)))) { q.place = { kind: 'home', id: h.id, label: h.label, lat: h.lat, lon: h.lon }; break; }
@@ -119,15 +121,132 @@ function fResults(q, myUnits) {
 /* Unit names carry their own commas ("Wasatch Mtns, East"), so joining a list of
    them with a comma reads as one long run. */
 const fList = a => a.map(esc).join('; ');
+/* ---------------------------------------------------------------- birds --- */
+/* Upland and waterfowl do not work like big game: there is no hunt unit you are
+   standing in. The seasons are statewide or by zone, and the question that
+   actually matters is which marsh or foothill is closest. So this path answers
+   "when" from the season list the app already carries and "where" from the 88
+   access points, which already hold a drive time from each home.
+
+   [key, label, what it sounds like in a sentence, season ids, access-point species] */
+const F_BIRDS = [
+  ['pheasant', 'Pheasant', /\b(pheasants?|roosters?|ring-?necks?|ring-?necked)\b/, ['pheasant', 'pheasant-youth'], /pheasant/i],
+  ['chukar', 'Chukar and gray partridge', /\b(chukars?|partridges?|huns?)\b/, ['chukar', 'chukar-youth'], /chukar/i],
+  ['quail', 'Quail', /\b(quail|gambels?)\b/, ['quail'], /quail|upland/i],
+  ['grouse', 'Dusky and ruffed grouse', /\b(grouse|dusky|ruffed)\b/, ['dusky-ruffed'], /grouse|upland/i],
+  ['ptarmigan', 'White-tailed ptarmigan', /\bptarmigans?\b/, ['ptarmigan'], /ptarmigan/i],
+  ['duck', 'Duck, coot and snipe', /\b(ducks?|mallards?|teal|wid?geons?|gadwalls?|pintails?|canvasbacks?|mergansers?|coots?|snipe|redheads?|bluebills?|scaup)\b/, ['duck-n', 'scaup-n'], /duck/i],
+  ['goose', 'Geese', /\b(goose|geese|honkers?|specklebell(y|ies)|white-?fronted)\b/, ['geese-wf', 'geese-wf2'], /duck/i],
+  ['swan', 'Tundra swan', /\bswans?\b/, ['swan'], /duck/i],
+  ['turkey', 'Wild turkey', /\b(turkeys?|gobblers?)\b/, ['turkey-fall', 'turkey-general', 'turkey-le'], /turkey/i]
+];
+/* Recognised by name, but the app has no season data for them yet. Saying so
+   beats a confident wrong answer. Tested BEFORE the list above, because
+   "sage grouse" contains "grouse" and "sandhill crane" is not a duck. */
+const F_BIRD_GAPS = [
+  ['Sage grouse', /\bsage[\s-]?grouse\b/, 'a limited-entry draw hunt with a short season and closed areas'],
+  ['Sharp-tailed grouse', /\bsharp[\s-]?tail(ed)?s?\b/, 'a limited-entry draw hunt with closed areas'],
+  ['Sandhill crane', /\b(sandhills?|cranes?)\b/, 'a limited-entry draw hunt'],
+  ['Mourning dove', /\b(doves?)\b/, 'an early season that usually opens September 1'],
+  ['Band-tailed pigeon', /\b(band[\s-]?tail(ed)?|pigeons?)\b/, 'a short early season']
+];
+/* The season list carries Northern Zone waterfowl and the Wasatch Front goose
+   area only. Quoting those dates to somebody hunting the south would be exactly
+   the kind of confident wrong answer this app is supposed to avoid, so a place
+   known to sit outside gets told, and every zoned season prints its own area. */
+const F_ZONED = { duck: 1, goose: 1, swan: 1 };
+const F_HOME_ZONE = { nsl: 'north', heber: 'north', torrey: 'south' };
+
+const F_BIRD_CHIP = { pheasant: 'Pheasant', chukar: 'Chukar', quail: 'Quail', grouse: 'Grouse', ptarmigan: 'Ptarmigan', duck: 'Duck', goose: 'Geese', swan: 'Swan', turkey: 'Turkey' };
+const fBird = k => F_BIRDS.find(b => b[0] === k);
+/* Where today sits in the season. */
+function fOpen(s) {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const a = d0(s.start), b = d0(s.end);
+  if (now < a) { const n = Math.round((a - now) / 86400000); return ['soon', n === 1 ? 'Opens tomorrow' : 'Opens in ' + n + ' days']; }
+  if (now > b) return ['done', 'Closed for the year'];
+  const n = Math.round((b - now) / 86400000);
+  return ['open', n <= 14 ? 'Open now, ' + n + ' days left' : 'Open now'];
+}
+/* One access point, keeping the drive time relative to the place that was asked
+   about rather than the home toggle at the top of the screen. */
+const fHomeId = place => place ? (place.kind === 'home' ? place.id : null) : home;   // no place named: use the header toggle
+function fBirdRow(p, place) {
+  const hid = fHomeId(place), d = hid && (p.drive || {})[hid];
+  const v = d ? (d.range ? d.range[0] + '-' + d.range[1] : String(d.min)) : (place && place.lat != null ? miles(place.lat, place.lon, p.lat, p.lon).toFixed(0) : '--');
+  const sub = d ? (d.range ? 'min *' : 'min') : (place && place.lat != null ? 'mi' : '');
+  return `<button class="row" data-pt="${esc(p.id)}" style="--g:var(--bird)"><span class="pill"></span>
+    <span><span class="t">${esc(p.name)}</span><span class="s">${esc(p.county)} Co. &middot; ${esc(p.species)}${p.confidence === 'Low' ? ' &middot; verify ownership first' : ''}</span></span>
+    <span class="v">${esc(v)}<small>${sub}</small></span></button>`;
+}
+function fBirdPlaces(bird, place) {
+  const pts = (DB.birds || []).filter(p => bird[4].test(p.species || ''));
+  const hid = fHomeId(place);
+  const key = p => {
+    const d = hid && (p.drive || {})[hid];
+    if (d) return d.range ? d.range[0] : d.min;
+    if (place && place.lat != null) return miles(place.lat, place.lon, p.lat, p.lon);
+    return 1e9;
+  };
+  return pts.sort((a, b) => key(a) - key(b));
+}
+function fBirdView(q) {
+  const bird = q.bird, place = q.place, hid = fHomeId(place), zone = hid ? F_HOME_ZONE[hid] : null;
+  const zoned = F_ZONED[bird[0]];
+  let h = `<div class="sec-title">${esc(bird[1])}${place ? ' &middot; ' + esc(place.label || 'here') : ''}</div>`;
+
+  if (zoned && zone === 'south') {
+    h += `<div class="warnbox" style="margin-top:4px"><b>No dates for you here.</b> The app only carries
+      ${esc(bird[0] === 'goose' ? 'the Wasatch Front goose area' : 'Northern Zone')} waterfowl dates, and
+      ${esc((place && place.label) || ((DB.config.homes || []).find(x => x.id === hid) || {}).label || 'that spot')} is in the south. The southern zone opens on different days. Check the 2026
+      waterfowl guidebook at wildlife.utah.gov/waterfowl before you go.</div>`;
+  } else {
+    const seasons = bird[3].map(fSeason).filter(Boolean);
+    h += `<div class="card">` + seasons.map(s => {
+      const o = fOpen(s);
+      return `<div class="row" style="--g:${o[0] === 'open' ? 'var(--brand)' : o[0] === 'soon' ? 'var(--accent)' : 'var(--faint)'}"><span class="pill"></span>
+        <span><span class="t">${esc(s.name)}</span><span class="s">${esc(fmt(d0(s.start)))} to ${esc(fmt(d0(s.end)))}${s.bag && s.bag !== '-' ? ' &middot; ' + esc(s.bag) : ''}<br>${esc(s.area)} &middot; ${esc(s.permit)}${s.note ? '<br>' + esc(s.note) : ''}</span></span>
+        <span class="v" style="font-size:12px">${esc(o[1])}</span></div>`;
+    }).join('') + `</div>`;
+    if (zoned) h += `<p class="fine" style="padding-left:2px">These are <b>${esc(seasons[0] ? seasons[0].area : '')}</b> dates. Utah splits waterfowl by zone and geese by area - confirm yours in the guidebook before opening morning.</p>`;
+  }
+
+  const pts = fBirdPlaces(bird, place);
+  const hlab = hid && (DB.config.homes || []).find(x => x.id === hid);
+  h += `<div class="sec-title">Where to go${pts.length ? ' &middot; ' + pts.length + ' place' + (pts.length === 1 ? '' : 's') : ''}${hlab ? ' &middot; by drive from ' + esc(hlab.label) : ''}</div>`;
+  if (!pts.length) {
+    h += `<p class="empty">No access points in the app are tagged for ${esc(bird[1].toLowerCase())}. The Access tab has all 88.</p>`;
+  } else {
+    h += `<div class="card">` + pts.slice(0, 25).map(p => fBirdRow(p, place)).join('') + `</div>`;
+    if (pts.length > 25) h += `<p class="fine">Showing the 25 closest of ${pts.length}. The Access tab has the rest.</p>`;
+    /* The access list is concentrated on the northern marshes and foothills. If
+       the closest one is half a day away, say so rather than letting a list of
+       places imply there is something nearby. */
+    const near = hid && (pts[0].drive || {})[hid];
+    const mins = near ? (near.range ? near.range[0] : near.min) : null;
+    if (mins != null && mins > 120) h += `<p class="fine" style="padding-left:2px">Every one of these is a long way off - the closest is about ${Math.round(mins / 60)} hours. The app's access list is concentrated on the northern marshes and foothills, so it is thin wherever you are hunting from.</p>`;
+    if (bird[0] === 'goose' || bird[0] === 'swan') h += `<p class="fine" style="padding-left:2px">These are the waterfowl marshes; the app tags them by duck, and they hold ${esc(bird[0] === 'swan' ? 'swan' : 'geese')} too.</p>`;
+  }
+  h += `<p class="fine" style="padding-left:2px">Season dates and limits are from the 2026 guidebooks; places and drive times from the app's access list. Migratory birds need HIP registration, and ducks, geese, swan and coot need a federal duck stamp if you are 16 or over. Nontoxic shot is required for waterfowl and on most WMAs. Not legal advice - the guidebook is the authority.</p>`;
+  return h;
+}
+const fGapNotice = g => `<div class="warnbox" style="margin-top:12px"><b>${esc(g[0])} is not in the app yet.</b>
+  In Utah it is ${esc(g[2])}, so the dates are not something to guess at. Look it up at
+  wildlife.utah.gov before you plan around it.</div>
+  <p class="fine" style="padding-left:2px">The app carries pheasant, chukar, quail, dusky and ruffed grouse, ptarmigan,
+  Northern Zone duck and scaup, Wasatch Front geese, tundra swan and turkey.</p>`;
+
 function vFind() {
   fLoad();
   const q = fq.parsed || null;
-  let h = `<form id="findform" style="margin-top:12px"><input class="search" id="findq" placeholder="I want to hunt elk by my cabin with a rifle" value="${esc(fq.text)}"><div class="acts" style="padding:8px 0 0"><button class="btn" type="submit">Find hunts</button></div></form>
-    <p class="fine" style="padding-left:2px">Try: "elk by the cabin", "archery deer near Torrey", "cow elk where I am", "limited entry elk Wasatch, 7 points". Works with no signal.</p>`;
+  let h = `<form id="findform" style="margin-top:12px"><input class="search" id="findq" placeholder="pheasant near home, or elk by my cabin with a rifle" value="${esc(fq.text)}"><div class="acts" style="padding:8px 0 0"><button class="btn" type="submit">Find hunts</button></div></form>
+    <p class="fine" style="padding-left:2px">Try: "elk by the cabin", "pheasant near home", "chukar where I am", "archery deer near Torrey", "limited entry elk Wasatch, 7 points". Works with no signal.</p>`;
   if (!q) return h;
+  if (q.gap) return h + fGapNotice(q.gap);                 // named it, but there is no data to stand behind
+  if (q.bird) return h + fBirdView(q);                     // birds answer from seasons + access, not hunt units
   if (!HU || !UNITS) return h + '<p class="empty">Loading the hunt lists&hellip;</p>';
   // Questions first
-  if (!q.sp) return h + fAsk('What do you want to hunt?', Object.entries(F_LABEL).map(([k, l]) => [k, l]), 'sp');
+  if (!q.sp) return h + fAsk('What do you want to hunt?', Object.entries(F_LABEL).concat(F_BIRDS.map(b => ['bird:' + b[0], F_BIRD_CHIP[b[0]]])), 'sp');
   if (!q.place) return h + fAsk('Where?', (DB.config.homes || []).map(x => [x.id, x.label]).concat([['gps', 'Where I am now']]), 'place') + '<p class="fine" style="padding-left:2px">Or name a unit in the sentence, like "Wasatch Mtns" or "Book Cliffs".</p>';
   if (q.place.kind === 'gps' && !q.place.lat) return h + `<p class="empty">Getting a GPS fix&hellip;</p>`;
   const myUnits = q.place.units || (q.place.lat ? unitsAt(q.place.lon, q.place.lat).map(u => u.n) : []);
@@ -154,7 +273,7 @@ document.addEventListener('submit', e => { if (e.target.id === 'findform') { e.p
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-fask]'); if (!t) return;
   const q = fq.parsed || fParse(''); const v = t.dataset.fval;
-  if (t.dataset.fask === 'sp') q.sp = v;
+  if (t.dataset.fask === 'sp') { if (v.indexOf('bird:') === 0) { q.bird = fBird(v.slice(5)); q.sp = null; } else { q.sp = v; q.bird = null; } }
   if (t.dataset.fask === 'wp') q.wp = v === 'any' ? null : v, q.wpAsked = true;
   if (t.dataset.fask === 'place') { const h = (DB.config.homes || []).find(x => x.id === v); q.place = h ? { kind: 'home', id: h.id, label: h.label, lat: h.lat, lon: h.lon } : { kind: 'gps' }; if (!h) { fq.parsed = q; fRun(fq.text); return; } }
   fq.parsed = q; render();
