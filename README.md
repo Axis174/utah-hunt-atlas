@@ -14,6 +14,25 @@ Not affiliated with UDWR. Always confirm against the current guidebook and the
 
 ---
 
+## Backend (scaffolded, NOT deployed)
+
+`backend/` holds one Cloudflare Worker (`worker.js`), its config (`wrangler.toml`)
+and a database schema (`schema.sql`). It does two things the phone cannot:
+alert a contact by email when a hunter is past their back-by time and never
+checked in (a cron every 10 minutes), and keep trail camera photos and tags in
+cloud storage so they survive a lost phone and can sync between devices. Sign-in
+is a 6-digit code by email; no passwords. Every row belongs to one user; there is
+no sharing between users, on purpose.
+
+What deploying it takes: a Cloudflare account (Pete has one), `wrangler login`,
+one D1 database, one R2 bucket, an email sender (Resend, free tier 3,000 emails a
+month, needs the rangerhawk.com domain verified), and `api.rangerhawk.com` as
+the Worker's custom domain. SMS alerts would add Twilio (about $1 a month for a
+number plus under a cent a text). Expected cost at Pete's own scale: $0. At a
+few hundred hunters: R2 storage is about $0.015 per GB a month; a hunter with
+2,000 photos at 20 KB is 40 MB, so cents each. The app has no code calling this
+yet; that is the next step after deployment.
+
 ## Brand
 
 Pulled from the 2016 RangerHawk site (`~/Documents/Hunt-2026/rangerhawk-2016/`):

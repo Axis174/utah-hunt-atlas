@@ -1,0 +1,22 @@
+# Ranger Hawk backend - one Cloudflare Worker. NOT DEPLOYED YET.
+# Deploy: npm i -g wrangler && wrangler login && wrangler d1 create rangerhawk && wrangler r2 bucket create rangerhawk-photos
+# then paste the D1 database_id below, set secrets (wrangler secret put RESEND_API_KEY), and: wrangler deploy
+name = "rangerhawk-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+routes = [{ pattern = "api.rangerhawk.com", custom_domain = true }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rangerhawk"
+database_id = "PASTE_AFTER_wrangler_d1_create"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "rangerhawk-photos"
+
+[triggers]
+crons = ["*/10 * * * *"]      # overdue check every 10 minutes
+
+[vars]
+FROM_EMAIL = "alerts@rangerhawk.com"
