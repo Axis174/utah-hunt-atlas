@@ -436,6 +436,81 @@ try:
 except Exception as e:                    # noqa: BLE001
     report["errors"].append({"source": "units_geo", "error": repr(e)[:200]})
 
+# ------------------------------------------------------------------ UDOT ----
+# Road cameras, weather stations, road conditions and mountain passes, so the app
+# can show what the drive looks like between home and the hunt. Every UDOT
+# endpoint requires a developer key on the query string. With no key set this
+# writes a file that says so rather than failing the run, and the app shows the
+# feature as not set up instead of breaking.
+UDOT_KEY = os.environ.get("UDOT_API_KEY", "").strip()
+
+
+def udot_num(v):
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if -180 <= f <= 180 and f != 0 else None
+
+
+def udot_rows(kind, raw):
+    """Flatten one endpoint into {id,name,lat,lon,road,dir,views} we can map."""
+    out = []
+    for r in raw if isinstance(raw, list) else []:
+        lat = udot_num(r.get("Latitude"))
+        lon = udot_num(r.get("Longitude"))
+        if lat is None or lon is None:
+            continue
+        views = []
+        for v in (r.get("Views") or []):
+            u = (v.get("Url") or "").strip()
+            if u and (v.get("Status") or "Enabled").lower() != "disabled":
+                views.append(u)
+        out.append({"k": kind,
+                    "id": str(r.get("Id") or r.get("SourceId") or len(out)),
+                    "n": (r.get("Location") or r.get("StationName") or r.get("RoadwayName")
+                          or r.get("Description") or "").strip()[:120],
+                    "lat": round(lat, 5), "lon": round(lon, 5),
+                    "road": (r.get("Roadway") or r.get("RoadwayName") or "").strip()[:40],
+                    "dir": (r.get("Direction") or "").strip()[:12],
+                    "v": views[:2]})
+    return out
+
+
+try:
+    if not UDOT_KEY:
+        save("udot.json", {"key": False, "checked": report["run"],
+                           "note": "No UDOT_API_KEY is set in the workflow, so no road data was pulled.",
+                           "cameras": [], "weather": [], "conditions": [], "passes": []})
+        report["ok"].append({"source": "udot", "features": 0, "note": "no key set"})
+    else:
+        got, errs = {}, []
+        names = {"cameras": "cameras", "weatherstations": "weather",
+                 "roadconditions": "conditions", "mountainpasses": "passes"}
+        for ep in S.UDOT_ENDPOINTS:
+            try:
+                raw = json.loads(get(f"{S.UDOT_API}/{ep}?format=json&key={UDOT_KEY}"))
+                got[names[ep]] = udot_rows(names[ep], raw)
+            except Exception as e:                    # noqa: BLE001
+                errs.append(f"{ep}: {repr(e)[:80]}")
+                got[names[ep]] = []
+            time.sleep(7)                               # ten calls per 60 seconds
+        total = sum(len(v) for v in got.values())
+        if total:
+            out = {"key": True, "checked": report["run"],
+                   "source": S.UDOT_API,
+                   "note": "UDOT Traffic API. Camera images need a signal; the locations work offline.",
+                   **got}
+            save("udot.json", out)
+            report["ok"].append({"source": "udot", "features": total})
+        else:
+            report["errors"].append({"source": "udot",
+                                     "error": "key set but every endpoint returned nothing: " + "; ".join(errs)})
+        for e in errs:
+            report["errors"].append({"source": "udot", "error": e})
+except Exception as e:                                # noqa: BLE001
+    report["errors"].append({"source": "udot", "error": repr(e)[:200]})
+
 # ---------------------------------------------------------------- report ----
 log = load_prev("changelog.json") or {"runs": []}
 log["runs"].insert(0, report)

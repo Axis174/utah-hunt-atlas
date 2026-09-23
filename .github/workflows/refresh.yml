@@ -35,6 +35,10 @@ jobs:
 
       - name: Refresh upstream data
         run: python scraper/refresh.py
+        env:
+          # Empty until the secret is set; refresh.py skips the UDOT block and
+          # writes a placeholder rather than failing the run.
+          UDOT_API_KEY: ${{ secrets.UDOT_API_KEY }}
 
       - name: Rebuild calendar feed
         run: python scraper/build_calendar.py

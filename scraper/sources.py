@@ -67,6 +67,12 @@ MIGRATION_LAYERS = {
 }
 UTAH_BBOX = "-114.1,36.9,-109.0,42.1"
 
+# UDOT's traffic API. Every endpoint needs a free developer key passed as ?key=,
+# so with no key in the environment the scraper skips this block entirely rather
+# than failing the run. Throttle is ten calls per 60 seconds; we make four.
+UDOT_API = "https://www.udottraffic.utah.gov/api/v2/get"
+UDOT_ENDPOINTS = ["cameras", "weatherstations", "roadconditions", "mountainpasses"]
+
 # PDFs watched for change. We hash them; a changed hash means UDWR reissued the
 # book and the season tables need a human read.
 PDFS = {

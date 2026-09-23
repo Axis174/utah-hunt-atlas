@@ -874,6 +874,7 @@ function sheetPoint(p) {
       <a class="btn" href="https://maps.apple.com/?daddr=${p.lat},${p.lon}&dirflg=d">Directions</a>
       <button class="btn ghost" data-copy="${p.lat}, ${p.lon}">Copy coordinates</button>
     </div>
+    ${typeof roadSlot === 'function' ? roadSlot(p) : ''}
     <dl class="f">
       ${f('Season', p.season)}${f('Releases', p.stocking)}${f('Restrictions', p.restrictions)}
       ${f('Permits', p.permits)}${f('Managed by', p.agency)}
