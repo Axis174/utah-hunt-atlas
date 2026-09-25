@@ -75,7 +75,16 @@ function alerts() {
 }
 function drive(p) {
   const d = (p.drive || {})[home];
-  if (!d) return { txt: '--', sub: '', mins: 1e9 };
+  /* Points added straight from UDWR's property layer have no routed time - there
+     is no routing engine here and inventing minutes would be a lie. Show the
+     straight-line miles instead, labelled as miles so it cannot be mistaken for
+     a drive, and sort them against the routed ones on a rough 43 mph. */
+  if (!d) {
+    const h = (DB.config.homes || []).find(x => x.id === home);
+    if (!h || p.lat == null) return { txt: '--', sub: '', mins: 1e9 };
+    const mi = miles(h.lat, h.lon, p.lat, p.lon);
+    return { txt: mi.toFixed(0), sub: 'mi', mins: mi * 1.4 };
+  }
   if (d.range) return { txt: d.range[0] + '-' + d.range[1], sub: 'min *', mins: d.range[0] };
   return { txt: String(d.min), sub: 'min', mins: d.min };
 }

@@ -186,12 +186,14 @@ function fOpen(s) {
 /* One access point, keeping the drive time relative to the place that was asked
    about rather than the home toggle at the top of the screen. */
 const fHomeId = place => place ? (place.kind === 'home' ? place.id : null) : home;   // no place named: use the header toggle
-function fBirdRow(p, place) {
+function fBirdRow(p, place, homeZone) {
   const hid = fHomeId(place), d = hid && (p.drive || {})[hid];
+  const pz = homeZone ? fPointZone(p) : null;
+  const flag = pz && pz !== homeZone ? ` &middot; <b>${pz === 'north' ? 'Northern' : 'Southern'} Zone dates</b>` : '';
   const v = d ? (d.range ? d.range[0] + '-' + d.range[1] : String(d.min)) : (place && place.lat != null ? miles(place.lat, place.lon, p.lat, p.lon).toFixed(0) : '--');
   const sub = d ? (d.range ? 'min *' : 'min') : (place && place.lat != null ? 'mi' : '');
   return `<button class="row" data-pt="${esc(p.id)}" style="--g:var(--bird)"><span class="pill"></span>
-    <span><span class="t">${esc(p.name)}</span><span class="s">${esc(p.county)} Co. &middot; ${esc(p.species)}${p.confidence === 'Low' ? ' &middot; verify ownership first' : ''}</span></span>
+    <span><span class="t">${esc(p.name)}</span><span class="s">${esc(p.county)} Co. &middot; ${esc(p.species)}${p.confidence === 'Low' ? ' &middot; verify ownership first' : ''}${flag}</span></span>
     <span class="v">${esc(v)}<small>${sub}</small></span></button>`;
 }
 function fBirdPlaces(bird, place) {
@@ -200,8 +202,12 @@ function fBirdPlaces(bird, place) {
   const key = p => {
     const d = hid && (p.drive || {})[hid];
     if (d) return d.range ? d.range[0] : d.min;
-    if (place && place.lat != null) return miles(place.lat, place.lon, p.lat, p.lon);
-    return 1e9;
+    /* Points with no routed time sort on straight-line miles put onto a
+       minutes-like scale at roughly 43 mph. Without this the list would compare
+       a 92-mile drive against a 64-minute one and order them wrongly. */
+    if (place && place.lat != null) return miles(place.lat, place.lon, p.lat, p.lon) * 1.4;
+    const h = (DB.config.homes || []).find(x => x.id === hid);
+    return h ? miles(h.lat, h.lon, p.lat, p.lon) * 1.4 : 1e9;
   };
   return pts.sort((a, b) => key(a) - key(b));
 }
@@ -228,9 +234,9 @@ function fBirdView(q) {
       waterfowl into a Northern and a Southern Zone on county lines, and the app cannot tell which one
       ${esc((place && place.label) || 'that spot')} is in (Tooele County is split down I-80).
       Read the zone off the area on each season below.</div>`;
-    else if (zoned && zs.length > 1) h += `<div class="warnbox" style="margin-top:4px"><b>You would be crossing a zone line.</b>
-      ${esc(hrec.label)} is in the ${esc(zone === 'north' ? 'Northern' : 'Southern')} Zone, but the places below are in the other one.
-      <b>The season that counts is the zone you hunt in, not the one you live in</b> - both are shown, so read the area on each.</div>`;
+    else if (zoned && zs.length > 1) h += `<div class="warnbox" style="margin-top:4px"><b>Some of these places are across a zone line.</b>
+      ${esc(hrec.label)} is in the ${esc(zone === 'north' ? 'Northern' : 'Southern')} Zone, and some places below are in the other one - those are marked.
+      <b>The season that counts is the zone you hunt in, not the one you live in</b>, so read the marker on the place before the dates above.</div>`;
     const seasons = ids.map(fSeason).filter(Boolean);
     h += `<div class="card">` + seasons.map(s => {
       const o = fOpen(s);
@@ -247,7 +253,7 @@ function fBirdView(q) {
     h += bird[5] ? `<p class="fine" style="padding-left:2px">${esc(bird[5])}</p>`
       : `<p class="empty">No access points in the app are tagged for ${esc(bird[1].toLowerCase())}. The Access tab has all 88.</p>`;
   } else {
-    h += `<div class="card">` + pts.slice(0, 25).map(p => fBirdRow(p, place)).join('') + `</div>`;
+    h += `<div class="card">` + pts.slice(0, 25).map(p => fBirdRow(p, place, zoned ? zone : null)).join('') + `</div>`;
     if (pts.length > 25) h += `<p class="fine">Showing the 25 closest of ${pts.length}. The Access tab has the rest.</p>`;
     /* The access list is concentrated on the northern marshes and foothills. If
        the closest one is half a day away, say so rather than letting a list of
